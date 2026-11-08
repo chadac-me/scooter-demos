@@ -11,13 +11,94 @@
     let
       systems = [ "x86_64-linux" "aarch64-linux" ];
       forAll = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system} system);
+
+      # k3d's registry: `.localhost` resolves on the host and in the cluster.
+      registry = "k3d-scooter-reg.localhost:5800/";
+
+      # The replay agent with its node_modules and every demo's script baked in.
+      replayAgent = pkgs: pkgs.buildNpmPackage {
+        pname = "replay-agent";
+        version = "0";
+        src = pkgs.lib.fileset.toSource {
+          root = ./.;
+          fileset = pkgs.lib.fileset.unions [ ./package.json ./package-lock.json ./lib/replay-agent ./demos ];
+        };
+        npmDeps = pkgs.importNpmLock { npmRoot = ./.; };
+        npmConfigHook = pkgs.importNpmLock.npmConfigHook;
+        dontNpmBuild = true;
+        # Browsers are the renderer's business, not the agent's.
+        env.PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1";
+        nativeBuildInputs = [ pkgs.makeWrapper ];
+        installPhase = ''
+          mkdir -p $out/lib/replay-agent $out/share
+          npm prune --omit=dev --no-audit --no-fund
+          rm -rf node_modules/playwright-core node_modules/.bin
+          cp -r node_modules lib/replay-agent/agent.mjs $out/lib/replay-agent/
+          cp -r demos $out/share/demos
+          makeWrapper ${pkgs.nodejs}/bin/node $out/bin/replay-agent \
+            --add-flags $out/lib/replay-agent/agent.mjs \
+            --set-default DEMO_SCRIPTS $out/share/demos
+        '';
+        meta.mainProgram = "replay-agent";
+      };
+
+      # Scooter's own e2e cluster config, with the replay agent in place of goose.
+      clusterPlatform = pkgs: system: scooter.lib.evalPlatform {
+        inherit system;
+        buildSystem = system;
+        module = { lib, ... }: let
+          test = import "${scooter}/.github/deployment/test-platform.nix" {
+            inherit lib;
+            scooterSkills = scooter.lib.scooterSkills;
+            testContribs = { };
+          } registry;
+        in {
+          imports = [
+            "${scooter}/modules/testing.nix"
+            {
+              # `contribs` sits at the module root, not under `scooter`.
+              contribs = test.contribs;
+              scooter = builtins.removeAttrs test [ "contribs" ];
+            }
+          ];
+          scooter = {
+            testing.fakeAgent = false;
+            agent.command.program = replayAgent pkgs;
+            # One plain model, so the picker shows no provider groups.
+            agent.availableModels = lib.mkForce { goose."claude-opus".default = true; };
+          };
+        };
+      };
     in
     {
+      packages = forAll (pkgs: system:
+        let
+          cfg = (clusterPlatform pkgs system).config;
+          images = nixpkgs.lib.filterAttrs (_: i: i.package != null && i.attr != null) cfg.scooter.images;
+        in
+        {
+          replay-agent = replayAgent pkgs;
+          # Manifests plus a script that pushes every image they name to the k3d registry.
+          cluster = pkgs.runCommand "scooter-demos-cluster" { } ''
+            mkdir -p $out/bin
+            cp ${pkgs.writeText "platform.yaml" cfg.kubernetes.resultYAML} $out/platform.yaml
+            cat > $out/bin/push-images <<'SH'
+            #!${pkgs.runtimeShell}
+            set -euo pipefail
+            ${nixpkgs.lib.concatMapStrings (i: ''
+              echo "push ${i.ref.fullUrl}"
+              ${i.package.copyTo}/bin/copy-to "docker://localhost:5800/${nixpkgs.lib.removePrefix registry i.ref.fullUrl}" --dest-tls-verify=false
+            '') (builtins.attrValues images)}
+            SH
+            chmod +x $out/bin/push-images
+          '';
+        });
+
       devShells = forAll (pkgs: system: {
         # Scooter's own dev shell (node, postgres, router, chromium) plus capture tools.
         default = pkgs.mkShell {
           inputsFrom = [ scooter.devShells.${system}.default ];
-          packages = with pkgs; [ ffmpeg-full xorg.xorgserver ];
+          packages = with pkgs; [ ffmpeg-full xorg.xorgserver k3d kubectl ];
           # Fixed fonts, so text metrics match on every machine.
           FONTCONFIG_FILE = pkgs.makeFontsConf {
             fontDirectories = with pkgs; [ inter noto-fonts noto-fonts-color-emoji jetbrains-mono ];
