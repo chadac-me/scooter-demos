@@ -1,0 +1,6 @@
+title: Inline dashboards
+blurb: Scooter builds a dashboard, publishes it as a share, and embeds it live in the reply.
+stack: fast
+# The fast stack has no broker, so the share URL is served from this file.
+routes:
+  "**/s/3b7e9d40-5c1a-4f2e-9a6b-1d2c3e4f5a6b/**": page.html

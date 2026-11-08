@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>CI health, Nov 2–8</title>
+<style>
+  :root {
+    --surface: #ffffff; --ink: #1d1d22; --ink-2: #5b5b66; --muted: #8a8a96;
+    --grid: #ececf1; --series: #5b4bd6; --critical: #c2412d;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --surface: #18181c; --ink: #ededf2; --ink-2: #b0b0bb; --muted: #7d7d89;
+            --grid: #2b2b33; --series: #9d92ff; --critical: #f0785f; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 20px 22px; background: var(--surface); color: var(--ink);
+         font: 13px/1.4 Inter, system-ui, sans-serif; }
+  h1 { font-size: 15px; margin: 0 0 2px; font-weight: 600; }
+  .sub { color: var(--ink-2); margin-bottom: 16px; }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
+  .tile { border: 1px solid var(--grid); border-radius: 8px; padding: 10px 12px; }
+  .tile .k { color: var(--ink-2); font-size: 12px; }
+  .tile .v { font-size: 22px; font-weight: 600; margin-top: 2px; }
+  .tile .d { color: var(--ink-2); font-size: 12px; }
+  .row { display: grid; grid-template-columns: 1.15fr 1fr; gap: 18px; }
+  h2 { font-size: 12px; font-weight: 600; margin: 0 0 6px; color: var(--ink); }
+  svg text { fill: var(--muted); font-size: 11px; }
+  .gl { stroke: var(--grid); }
+  .line { fill: none; stroke: var(--series); stroke-width: 2; stroke-linejoin: round;
+          stroke-dasharray: 600; stroke-dashoffset: 600; animation: draw 1.2s ease-out .2s forwards; }
+  .dot { fill: var(--series); stroke: var(--surface); stroke-width: 2; }
+  .bar { fill: var(--series); transform-origin: left; transform: scaleX(0); animation: grow .8s ease-out forwards; }
+  .bar.top { fill: var(--critical); }
+  .lbl { fill: var(--ink-2); }
+  .val { fill: var(--ink); font-weight: 600; }
+  #tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--surface);
+         padding: 4px 7px; border-radius: 5px; font-size: 12px; opacity: 0; transition: opacity .1s; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes grow { to { transform: scaleX(1); } }
+</style>
+<body>
+<h1>CI health · chadac-me/scooter</h1>
+<div class="sub">Nov 2–8, 2026 · 412 workflow runs</div>
+<div class="tiles">
+  <div class="tile"><div class="k">Pass rate</div><div class="v">94.4%</div><div class="d">389 of 412 runs</div></div>
+  <div class="tile"><div class="k">Median run time</div><div class="v">11.8 min</div><div class="d">down from 14.2 min</div></div>
+  <div class="tile"><div class="k">Failures</div><div class="v">23</div><div class="d">15 in e2e fast</div></div>
+</div>
+<div class="row">
+  <div>
+    <h2>Median run time per day (minutes)</h2>
+    <svg id="line" width="390" height="200"></svg>
+  </div>
+  <div>
+    <h2>Failures by workflow</h2>
+    <svg id="bars" width="320" height="200"></svg>
+  </div>
+</div>
+<div id="tip"></div>
+<script>
+  const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const median = [14.6, 14.1, 13.9, 11.9, 11.6, 11.4, 11.8];
+  const fails = [["e2e fast",15],["nix builds",4],["cluster",2],["lint",1],["unit",1],["docs",0]];
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (p, tag, a, text) => { const e = document.createElementNS(NS, tag);
+    for (const k in a) e.setAttribute(k, a[k]); if (text != null) e.textContent = text; p.appendChild(e); return e; };
+  const tip = document.getElementById("tip");
+  const hover = (node, text) => {
+    node.addEventListener("mousemove", (e) => { tip.textContent = text; tip.style.left = e.clientX + 12 + "px"; tip.style.top = e.clientY - 28 + "px"; tip.style.opacity = 1; });
+    node.addEventListener("mouseleave", () => (tip.style.opacity = 0));
+  };
+
+  // Line: one series, so the title names it and no legend is needed.
+  { const s = document.getElementById("line"), L = 30, R = 380, T = 10, B = 175, lo = 10, hi = 16;
+    const x = (i) => L + (i * (R - L)) / (days.length - 1), y = (v) => B - ((v - lo) / (hi - lo)) * (B - T);
+    for (let v = lo; v <= hi; v += 2) { el(s, "line", { class: "gl", x1: L, x2: R, y1: y(v), y2: y(v) }); el(s, "text", { x: L - 6, y: y(v) + 4, "text-anchor": "end" }, v); }
+    days.forEach((d, i) => el(s, "text", { x: x(i), y: B + 18, "text-anchor": "middle" }, d));
+    el(s, "path", { class: "line", d: median.map((v, i) => `${i ? "L" : "M"}${x(i)},${y(v)}`).join("") });
+    median.forEach((v, i) => { const c = el(s, "circle", { class: "dot", cx: x(i), cy: y(v), r: 4 });
+      const hit = el(s, "rect", { x: x(i) - 24, y: T, width: 48, height: B - T, fill: "transparent" }); hover(hit, `${days[i]}: ${v} min`); });
+    el(s, "text", { x: x(3) + 8, y: y(median[3]) + 24, class: "lbl" }, "runner change");
+  }
+
+  // Bars: sorted descending, the worst one called out.
+  { const s = document.getElementById("bars"), L = 84, R = 290, rowH = 28, max = 16;
+    fails.forEach(([name, n], i) => { const yy = 8 + i * rowH, w = Math.max(2, (n / max) * (R - L));
+      el(s, "text", { x: L - 8, y: yy + 14, "text-anchor": "end", class: "lbl" }, name);
+      const b = el(s, "rect", { class: "bar" + (i === 0 ? " top" : ""), x: L, y: yy + 2, width: w, height: 16, rx: 4, style: `animation-delay:${0.15 + i * 0.07}s` });
+      el(s, "text", { x: L + w + 6, y: yy + 14, class: "val" }, n); hover(b, `${name}: ${n} failed runs`); });
+  }
+</script>
+</body>
+</html>

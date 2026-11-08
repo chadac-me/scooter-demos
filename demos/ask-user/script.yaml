@@ -1,0 +1,40 @@
+title: Bookmarks API storage
+turns:
+  - prompt: Add persistent storage to the bookmarks API
+    steps:
+      - think: The API keeps bookmarks in memory. Which database to use is a product call, so I should ask.
+      - shell:
+          command: ls src/
+          output: |
+            app.ts
+            routes.ts
+            store.ts
+      - say: |
+          Bookmarks currently live in an in-memory `Map` in `store.ts`, so they vanish on restart.
+      - pause: 400
+      - ask:
+          header: Database
+          question: Which database should back the bookmarks API?
+          options:
+            - label: SQLite
+              description: One file, zero setup; fine for a single instance
+            - label: Postgres
+              description: A server to run, but scales out and handles concurrent writers
+          then:
+            SQLite:
+              - shell:
+                  command: npm install better-sqlite3
+                  output: "added 1 package in 2s"
+              - say: |
+                  Done. `store.ts` now writes through to `data/bookmarks.db` with **better-sqlite3**:
+
+                  - a `bookmarks` table created on first start
+                  - the same `get` / `put` / `list` interface, so `routes.ts` is unchanged
+                  - `data/` added to `.gitignore`
+            Postgres:
+              - shell:
+                  command: npm install pg
+                  output: "added 13 packages in 3s"
+              - say: |
+                  Done. `store.ts` now uses **pg** with a connection pool read from `DATABASE_URL`,
+                  and a migration creates the `bookmarks` table.

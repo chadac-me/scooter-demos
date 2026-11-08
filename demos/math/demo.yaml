@@ -1,0 +1,7 @@
+title: Math in chat
+blurb: Scooter writes TeX and the chat renders it with KaTeX, inline and as display math.
+stack: fast
+# math is opt-in, so the shipped manifest leaves it out.
+manifest:
+  markdownSyntax:
+    math: { contrib: math, entry: math/ui/MathSyntax.tsx }

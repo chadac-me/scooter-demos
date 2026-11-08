@@ -1,0 +1,24 @@
+title: Gaussian integral
+turns:
+  - prompt: Why does the Gaussian integral come out to √π?
+    steps:
+      - think: The classic trick is to square the integral and switch to polar coordinates.
+      - pause: 300
+      - say: |
+          Square it and the problem becomes a 2D integral you can do in polar coordinates.
+
+          Let \(I = \int_{-\infty}^{\infty} e^{-x^2}\,dx\). Then
+
+          $$
+          I^2 = \int_{-\infty}^{\infty}\!\int_{-\infty}^{\infty} e^{-(x^2+y^2)}\,dx\,dy
+          $$
+
+          With \(x = r\cos\theta\), \(y = r\sin\theta\) and \(dx\,dy = r\,dr\,d\theta\):
+
+          $$
+          I^2 = \int_0^{2\pi}\!\int_0^{\infty} e^{-r^2}\,r\,dr\,d\theta
+              = 2\pi \cdot \tfrac{1}{2} = \pi
+          $$
+
+          Since \(I > 0\), we get \(I = \sqrt{\pi}\). The extra factor of \(r\) is what makes
+          the inner integral elementary.

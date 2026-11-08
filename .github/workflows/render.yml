@@ -1,0 +1,55 @@
+# Render every demo against the pinned Scooter and publish the gallery to Pages.
+# Manual only: run it after `just bump`, or whenever the docs need fresh videos.
+name: render
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish to GitHub Pages (otherwise only upload the artifact)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: render
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Install
+        run: nix develop -c npm ci --no-audit --no-fund
+      - name: Render
+        run: nix develop -c node lib/render.mjs
+      - name: Gallery
+        run: nix develop -c node lib/site.mjs
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+      - name: Contact sheet
+        run: |
+          {
+            echo "## Rendered demos"
+            jq -r '.demos | to_entries[] | "- **\(.value.title)**: \(.value.renders | map("\(.theme) \(.duration)s") | join(", "))"' out/manifest.json
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    if: inputs.publish
+    needs: render
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,123 @@
+# scooter-demos
+
+Short videos of Scooter at work, for the [Scooter docs](https://chadac-me.github.io/scooter/).
+Every video is defined in code and rendered against a pinned Scooter, so one
+command rebuilds them all whenever the UI changes.
+
+Gallery: <https://chadac-me.github.io/scooter-demos/>
+
+## How it works
+
+Each demo plays a **script** of what the agent says and does (reasoning, streamed
+replies, tool calls, question cards) through a small ACP agent, the *replay
+agent*, in place of a model. Everything else is the real thing: Scooter's UI,
+agent-host and conversation-router, booted as Scooter's own fast e2e stack from
+the commit `flake.lock` pins. The story stays the same between renders, and the
+UI is always the pinned version.
+
+A **scene** drives the browser the way a person would on camera: paced typing,
+a gliding pointer, holds. Chromium runs headed on Xvfb and ffmpeg grabs the
+display at 60 fps. The grab is then trimmed to the scene's `begin`/`end` marks and
+encoded to MP4 (H.264), WebM (VP9) and a poster PNG, in light and dark.
+
+```
+demos/<name>/
+  demo.yaml     title, blurb, stack, extra manifest rows, routed pages
+  script.yaml   the agent's turns
+  scene.mjs     what the "user" does on camera
+lib/
+  replay-agent/ the ACP agent that plays script.yaml
+  director.mjs  scene helpers
+  capture.mjs   Xvfb + ffmpeg grab and encode
+  render.mjs    boots the stack and renders demos into out/
+  site.mjs      builds the gallery page from out/manifest.json
+```
+
+## Rendering
+
+Everything comes from the dev shell (node, Postgres, the router, Chromium,
+ffmpeg, Xvfb, fonts), so a laptop and CI render the same frames.
+
+```bash
+nix develop
+npm ci
+just render                 # every demo, light and dark, into out/
+just render math            # one demo
+just preview math           # headless with Playwright's recorder: quick, not smooth
+just site                   # out/index.html
+```
+
+The first render copies the pinned Scooter source into `.cache/` and builds it,
+which takes a few minutes. Later renders reuse it. Set `SCOOTER_DIR` to point at
+a Scooter checkout you have already built.
+
+Postgres refuses to run as root, so render as a regular user.
+
+## Updating the videos
+
+1. `just bump` moves the pinned Scooter to its latest `main`.
+2. Run the **render** workflow (Actions → render → Run workflow). It renders
+   every demo, summarises them on the run page and publishes the gallery to
+   GitHub Pages. Untick *publish* to look at the artifact first.
+
+Nothing renders on a schedule.
+
+## Embedding in the docs
+
+Each demo's "Embed" snippet on the gallery page shows the light render in light
+mode and the dark render in dark mode:
+
+```html
+<video class="scooter-demo only-light" src="https://chadac-me.github.io/scooter-demos/math-light.mp4"
+       poster="https://chadac-me.github.io/scooter-demos/math-light.png" autoplay muted loop playsinline></video>
+```
+
+## Writing a demo
+
+`script.yaml` is a list of turns, each matched to the user's prompt (case and
+whitespace are ignored):
+
+```yaml
+title: Conversation title
+pace: { say: 240, think: 420 }    # characters per second (optional)
+turns:
+  - prompt: The exact text the scene types
+    steps:
+      - think: Reasoning, streamed into the Reasoning block.
+      - shell: { command: ls src/, output: "app.ts\n" }   # leave out output to run it for real
+      - tool: { title: publish, input: { ... }, output: "..." }
+      - say: Markdown reply, streamed.
+      - pause: 400
+      - ask:                                             # an ask-user question card
+          header: Database
+          question: Which database?
+          options: [{ label: SQLite, description: ... }, { label: Postgres, description: ... }]
+          then: { SQLite: [ ...steps ], Postgres: [ ...steps ] }
+```
+
+`scene.mjs` exports a function of the director:
+
+```js
+import { scene } from "../../lib/director.mjs";
+
+export default scene(async (d) => {
+  await d.open();
+  d.mark("begin");
+  await d.ask("The exact text the scene types");   // type, send, wait for the reply
+  await d.focus(".katex-display");                  // smooth-scroll it to the centre
+  d.mark("poster");
+  await d.hold(3000);
+  d.mark("end");
+});
+```
+
+In `demo.yaml`, `manifest` adds contrib UI rows the shipped manifest lacks
+(opt-in contribs such as `math`), and `routes` serves files for URLs the fast
+stack can't, such as a published share.
+
+## Not yet
+
+- **marimo**: it needs a real sandbox, so it renders on a k3d cluster. That
+  waits on a Scooter option to run a custom ACP agent in agent-host.
+- **`just record`**: writing a script from a real goose run. For now, scripts
+  are written by hand.
