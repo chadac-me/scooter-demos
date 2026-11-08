@@ -3,7 +3,7 @@
 
   inputs = {
     # The Scooter version every video shows; `nix flake update scooter` moves it.
-    scooter.url = "github:chadac/scooter/feat/fake-backend-agent-bin";
+    scooter.url = "github:chadac-me/scooter";
     nixpkgs.follows = "scooter/nixpkgs";
   };
 

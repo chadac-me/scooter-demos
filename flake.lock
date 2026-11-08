@@ -223,16 +223,15 @@
         "uv-nix": "uv-nix"
       },
       "locked": {
-        "lastModified": 1794174977,
-        "narHash": "sha256-A45yCfaaeuG13E39PuYhmhCjLVPPXd6px8W00Q/AQCo=",
-        "owner": "chadac",
+        "lastModified": 1794177795,
+        "narHash": "sha256-Sj1RY2TLBwZPTqPbmUxbafVaUamA4cM0IxIyHoKhDsE=",
+        "owner": "chadac-me",
         "repo": "scooter",
-        "rev": "48fc24a01d037606c2e8526605c28c663c28b391",
+        "rev": "4a5d53ce5a01d084d091c4a1ecfac861f44db957",
         "type": "github"
       },
       "original": {
-        "owner": "chadac",
-        "ref": "feat/fake-backend-agent-bin",
+        "owner": "chadac-me",
         "repo": "scooter",
         "type": "github"
       }
