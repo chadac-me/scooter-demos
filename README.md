@@ -41,7 +41,7 @@ ffmpeg, Xvfb, fonts), so a laptop and CI render the same frames.
 ```bash
 nix develop
 npm ci
-just render                 # every demo, light and dark, into out/
+just render                 # every fast-stack demo, light and dark, into out/
 just render math            # one demo
 just preview math           # headless with Playwright's recorder: quick, not smooth
 just site                   # out/index.html
@@ -115,9 +115,38 @@ In `demo.yaml`, `manifest` adds contrib UI rows the shipped manifest lacks
 (opt-in contribs such as `math`), and `routes` serves files for URLs the fast
 stack can't, such as a published share.
 
+## Cluster demos
+
+A demo that needs a real sandbox, such as `marimo`, sets `stack: cluster` and
+plays on a local k3d cluster running Scooter's e2e platform (`.#cluster`). That
+platform runs the replay agent through `scooter.agent.command` and bakes marimo
+into the sandbox image, so the cluster needs no internet once its images are in.
+
+```bash
+lib/cluster-up.sh           # registry, cluster, images, platform: ~10 minutes
+just render marimo
+k3d cluster delete scooter-demos
+```
+
+The renderer port-forwards the UI and serves it, and each conversation's service
+origin (`https://<id>.sandbox.e2e.test`), through local TLS edges.
+
+Scripts for cluster demos can also use:
+
+```yaml
+      - write: { path: /workspace/nb.py, from: nb.py }   # a file from the demo's folder
+      - shell:
+          command: scooter-service start notebook       # runs for real
+          capture: { url: 'https://\S+/notebook/' }      # later steps can say ${url}
+```
+
+Inside a Scooter sandbox, run both through `docker-netns`, and run
+`lib/cluster-up.sh` outside the dev shell: the sandbox's own `k3d` adds the
+`/dev/kmsg` stand-in k3s needs there.
+
 ## Not yet
 
-- **marimo**: it needs a real sandbox, so it renders on a k3d cluster. That
-  waits on a Scooter option to run a custom ACP agent in agent-host.
+- **marimo in CI**: the render workflow doesn't bring up the cluster yet, so
+  `marimo` renders locally only.
 - **`just record`**: writing a script from a real goose run. For now, scripts
   are written by hand.

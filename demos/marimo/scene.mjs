@@ -11,9 +11,11 @@ export default scene(async (d) => {
   await d.scrollToEnd();
   await d.hold(1200);
 
-  // The link opens a tab; in kiosk mode it fills the recorded screen.
-  const [tab] = await Promise.all([d.page.context().waitForEvent("page"), d.click(link)]);
-  d.use(tab);
+  // The link may open a tab; in kiosk mode that fills the recorded screen.
+  const popup = d.page.context().waitForEvent("page", { timeout: 5000 }).catch(() => null);
+  await d.click(link);
+  const tab = (await popup) ?? d.page;
+  await d.use(tab);
   const nb = tab.frameLocator("#marimo");
   await nb.locator("svg rect").first().waitFor({ state: "visible", timeout: 300_000 });
   await d.settle(800);
@@ -26,7 +28,7 @@ export default scene(async (d) => {
   await d.hold(1600);
 
   // Switch workflow from the dropdown.
-  await nb.getByRole("combobox").first().selectOption("e2e fast");
+  await nb.locator("select").first().selectOption("e2e fast");
   await d.hold(2400);
   d.mark("end");
 });

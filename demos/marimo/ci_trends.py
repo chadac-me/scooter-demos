@@ -3,7 +3,7 @@ import marimo
 app = marimo.App(width="medium")
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _():
     import random
 
@@ -12,13 +12,13 @@ def _():
     return mo, random
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""# CI run times""")
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(random):
     random.seed(7)
     base = {"e2e fast": 9.0, "e2e full": 24.0, "unit": 4.0, "lint": 2.0, "images": 13.0}
@@ -31,7 +31,7 @@ def _(random):
     return runs, workflows
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo, workflows):
     pick = mo.ui.dropdown(workflows, value="e2e full", label="Workflow")
     days = mo.ui.slider(7, 30, value=14, label="Last N days", show_value=True)
@@ -39,7 +39,7 @@ def _(mo, workflows):
     return days, pick
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(days, mo, pick, runs):
     rows = [r for r in runs if r["workflow"] == pick.value and r["day"] > 30 - days.value]
     peak = max(r["minutes"] for r in rows)

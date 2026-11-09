@@ -4,7 +4,11 @@
 
 let
   python = pkgs.python3.withPackages (p: [ p.marimo ]);
-  settings = (pkgs.formats.toml { }).generate "marimo.toml" { runtime.auto_instantiate = true; };
+  settings = (pkgs.formats.toml { }).generate "marimo.toml" {
+    runtime.auto_instantiate = true;
+    # Follow the browser, so dark renders get a dark notebook.
+    display.theme = "system";
+  };
 in
 {
   webServices.marimo.command = lib.mkForce "${pkgs.writeShellScript "marimo-offline" ''
