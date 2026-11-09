@@ -10,7 +10,8 @@ turns:
           VS Code is open on the repo: [courier in VS Code](${url})
 
           Its chat panel is this same conversation, so you can ask from there.
-  - prompt: withRetry never gives up when a receiver stays down. Cap it at five attempts and add a test.
+  # VS Code sends it wrapped as a sandbox message.
+  - match: withRetry never gives up.*Cap it at five attempts
     steps:
       - think: withRetry loops forever on failure. I'll add a maxAttempts option defaulting to 5 that throws a RetryExhaustedError carrying the last error, then test both the give-up and the recovery paths.
       - write: { path: /workspace/src/retry.ts, from: files/retry.ts, duration: 700 }

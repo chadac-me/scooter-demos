@@ -68,7 +68,9 @@ in
       cp -r --no-preserve=mode ${nodeModules}/. /workspace/node_modules/
       cd /workspace
       git init -q -b main
-      git add -A
+      # Platform state under .scooter/ changes as we commit.
+      echo .scooter/ >> .git/info/exclude
+      git add -- $(ls -A ${repo})
       git -c user.name=Courier -c user.email=dev@courier.test commit -qm "Deliver order webhooks"
     '';
   };

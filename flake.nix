@@ -73,6 +73,11 @@
             agent.command.program = replayAgent pkgs;
             # One plain model, so the picker shows no provider groups.
             agent.availableModels = lib.mkForce { goose."claude-opus".default = true; };
+            # Above testing.nix's mkForce: code-server outgrows 1Gi.
+            sandboxResources = lib.mkOverride 40 {
+              requests = { cpu = "250m"; memory = "256Mi"; };
+              limits = { cpu = "2"; memory = "3Gi"; };
+            };
             # Gives sandboxes a CONVERSATION_URL, so the notebook page shows the chat.
             ingress.host = "scooter.e2e.test";
             # Pods have no internet, so demo tools ship in the image.
