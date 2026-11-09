@@ -74,6 +74,16 @@ mode and the dark render in dark mode:
 
 ## Writing a demo
 
+1. Copy the closest demo to `demos/<name>/`. Any folder with a `demo.yaml` is
+   picked up by `just render`, the workflow and the gallery; nothing else to
+   register.
+2. Write `script.yaml` (what the agent does) and `scene.mjs` (what the user
+   does). The scene's prompts must match the script's `prompt`s.
+3. Iterate with `just preview <name>`: it fails fast on a locator that never
+   appears, and leaves a recording in `out/preview/`.
+4. Do a real `just render <name>` and check the poster and both themes in `out/`.
+5. Commit. The videos themselves come from the render workflow.
+
 `script.yaml` is a list of turns, each matched to the user's prompt (case and
 whitespace are ignored):
 
@@ -110,6 +120,22 @@ export default scene(async (d) => {
   d.mark("end");
 });
 ```
+
+The video is trimmed to `begin`…`end`, and the poster is the frame at `poster`.
+The director (`lib/director.mjs`) also has:
+
+| Helper | Does |
+| --- | --- |
+| `type(text)`, `send()`, `waitForReply()` | the pieces of `ask` |
+| `moveTo(target)`, `click(target)` | glide the drawn pointer, then click |
+| `drag(target, { dx, dy })` | press, glide and release, e.g. a slider |
+| `submitCard(card, button)` | answer an ask-user card |
+| `scrollToEnd()`, `park()` | show the reply's tail; move the pointer aside |
+| `use(page)` | carry on in another tab, such as one a link opened |
+| `hold(ms)`, `settle()` | pause on camera; wait for layout to stop moving |
+
+`d.page` is the Playwright page, for locators and anything else. Targets are
+locators or CSS selectors.
 
 In `demo.yaml`, `manifest` adds contrib UI rows the shipped manifest lacks
 (opt-in contribs such as `math`), and `routes` serves files for URLs the fast
