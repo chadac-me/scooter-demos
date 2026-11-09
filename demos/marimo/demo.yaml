@@ -1,0 +1,4 @@
+title: marimo notebooks
+blurb: Scooter writes a marimo notebook, starts it in the sandbox, and you explore it with the chat alongside.
+# A real sandbox pod runs the notebook, so this plays on the k3d platform.
+stack: cluster

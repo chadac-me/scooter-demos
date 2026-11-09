@@ -46,11 +46,12 @@
       clusterPlatform = pkgs: system: scooter.lib.evalPlatform {
         inherit system;
         buildSystem = system;
-        module = { lib, ... }: let
+        module = { config, lib, ... }: let
           test = import "${scooter}/.github/deployment/test-platform.nix" {
             inherit lib;
             scooterSkills = scooter.lib.scooterSkills;
-            testContribs = { };
+            # The notebook web service the marimo demo opens.
+            testContribs = { marimo.enable = true; };
           } registry;
         in {
           imports = [
@@ -66,6 +67,13 @@
             agent.command.program = replayAgent pkgs;
             # One plain model, so the picker shows no provider groups.
             agent.availableModels = lib.mkForce { goose."claude-opus".default = true; };
+            # Pods here have no internet, so marimo ships in the sandbox image.
+            images.agent-sandbox-os.package = let c = config.scooter.config; in (import "${scooter}/pkgs/sandbox-os/image.nix" {
+              inherit lib;
+              inherit (c) n2c nixStubs deploymentModules;
+              pkgs = c.sandboxPkgs;
+              extraModules = [ ./nix/marimo-offline.nix ];
+            }).image;
           };
         };
       };
@@ -81,7 +89,7 @@
           # Manifests plus a script that pushes every image they name to the k3d registry.
           cluster = pkgs.runCommand "scooter-demos-cluster" { } ''
             mkdir -p $out/bin
-            cp ${pkgs.writeText "platform.yaml" cfg.kubernetes.resultYAML} $out/platform.yaml
+            cp ${cfg.kubernetes.resultYAML} $out/platform.yaml
             cat > $out/bin/push-images <<'SH'
             #!${pkgs.runtimeShell}
             set -euo pipefail
@@ -98,7 +106,7 @@
         # Scooter's own dev shell (node, postgres, router, chromium) plus capture tools.
         default = pkgs.mkShell {
           inputsFrom = [ scooter.devShells.${system}.default ];
-          packages = with pkgs; [ ffmpeg-full xorg.xorgserver k3d kubectl ];
+          packages = with pkgs; [ ffmpeg-full xorg.xorgserver kubectl openssl ];
           # Fixed fonts, so text metrics match on every machine.
           FONTCONFIG_FILE = pkgs.makeFontsConf {
             fontDirectories = with pkgs; [ inter noto-fonts noto-fonts-color-emoji jetbrains-mono ];

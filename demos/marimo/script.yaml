@@ -1,0 +1,14 @@
+title: CI run times notebook
+turns:
+  - prompt: Make me a notebook that charts our CI run times by workflow
+    steps:
+      - think: I'll write a small marimo notebook with a workflow picker and a day-range slider, then start the notebook service and link it.
+      - write: { path: /workspace/ci_trends.py, from: ci_trends.py, duration: 900 }
+      - shell:
+          command: scooter-service start notebook
+          capture: { url: 'https://\S+/notebook/' }
+      - say: |
+          Your notebook is running: [ci_trends.py](${url}?file=ci_trends.py)
+
+          Pick a workflow or drag the slider and the chart recomputes. The chat sits beside it,
+          so you can keep asking for changes while you look.
