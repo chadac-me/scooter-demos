@@ -1,0 +1,4 @@
+title: Design review in Files
+blurb: Scooter writes a design doc and links it in Files. You comment on a line and answer a question, and Scooter revises the doc, replies in the thread and resolves it.
+# A real sandbox runs the files viewer and wakes the agent, so this plays on the k3d platform.
+stack: cluster
