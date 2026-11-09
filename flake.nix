@@ -75,12 +75,12 @@
             agent.availableModels = lib.mkForce { goose."claude-opus".default = true; };
             # Gives sandboxes a CONVERSATION_URL, so the notebook page shows the chat.
             ingress.host = "scooter.e2e.test";
-            # Pods here have no internet, so marimo ships in the sandbox image.
+            # Pods have no internet, so demo tools ship in the image.
             images.agent-sandbox-os.package = let c = config.scooter.config; in (import "${scooter}/pkgs/sandbox-os/image.nix" {
               inherit lib;
               inherit (c) n2c nixStubs deploymentModules;
               pkgs = c.sandboxPkgs;
-              extraModules = [ ./nix/marimo-offline.nix ];
+              extraModules = [ ./nix/marimo-offline.nix ./nix/vscode-offline.nix ];
             }).image;
           };
         };

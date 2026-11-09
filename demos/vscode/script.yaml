@@ -1,0 +1,22 @@
+title: Webhook retry cap
+turns:
+  - prompt: Open the courier repo in VS Code
+    steps:
+      - think: The repo is checked out at /workspace. I'll start the vscode service and link it.
+      - shell:
+          command: scooter-service start vscode
+          capture: { url: 'https://\S+/vscode/' }
+      - say: |
+          VS Code is open on the repo: [courier in VS Code](${url})
+
+          Its chat panel is this same conversation, so you can ask from there.
+  - prompt: withRetry never gives up when a receiver stays down. Cap it at five attempts and add a test.
+    steps:
+      - think: withRetry loops forever on failure. I'll add a maxAttempts option defaulting to 5 that throws a RetryExhaustedError carrying the last error, then test both the give-up and the recovery paths.
+      - write: { path: /workspace/src/retry.ts, from: files/retry.ts, duration: 700 }
+      - write: { path: /workspace/test/retry.test.ts, from: files/retry.test.ts, duration: 700 }
+      - say: |
+          Done. `withRetry` now stops after `maxAttempts` (5 by default) and throws a
+          `RetryExhaustedError` with the last error as its `cause`.
+
+          The new tests are in `test/retry.test.ts`. Run `npm test` to try them.

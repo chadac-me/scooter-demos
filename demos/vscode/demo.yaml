@@ -1,0 +1,4 @@
+title: VS Code
+blurb: Scooter opens your repo in VS Code, and you keep the same conversation going from VS Code's own chat.
+# code-server needs a real sandbox pod, so: k3d.
+stack: cluster
