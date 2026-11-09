@@ -17,7 +17,12 @@ export default scene(async (d) => {
   await d.open();
   d.mark("begin");
   await d.hold(600);
-  await d.ask("Open the courier repo in VS Code", { timeout: 600_000 });
+  await d.ask("Open the courier repo in VS Code", { wait: false });
+  await d.hold(800);
+  // Skip the sandbox boot.
+  await d.cut(() => d.page.getByText("Reasoning").first().waitFor({ state: "visible", timeout: 600_000 }));
+  await d.hold(1500);
+  await d.cut(() => d.waitForReply({ timeout: 600_000 }));
   const link = d.page.getByRole("link", { name: "courier in VS Code" }).last();
   await link.waitFor({ state: "visible" });
   await d.scrollToEnd();
@@ -27,16 +32,19 @@ export default scene(async (d) => {
   const popup = d.page.context().waitForEvent("page", { timeout: 5000 }).catch(() => null);
   await d.click(link);
   const tab = (await popup) ?? d.page;
-  await d.use(tab);
-  await tab.locator(vs.workbench).waitFor({ state: "visible", timeout: 300_000 });
-  await d.settle(3000);
+  // Skip code-server starting and the workbench loading.
+  await d.cut(async () => {
+    await d.use(tab);
+    await tab.locator(vs.workbench).waitFor({ state: "visible", timeout: 300_000 });
+    await d.settle(3000);
+  });
   await d.hold(800);
 
   // The Scooter harness: this conversation, continued from VS Code.
   await d.click(tab.locator(vs.harness).first());
   await d.hold(500);
   await d.click(tab.locator(vs.scooter, { hasText: /^Scooter$/ }).first());
-  await tab.locator(vs.input).getByText("Chat with Scooter").waitFor({ state: "visible", timeout: 60_000 });
+  await d.cut(() => tab.locator(vs.input).getByText("Chat with Scooter").waitFor({ state: "visible", timeout: 60_000 }));
   await d.hold(1200);
 
   await d.typeIn(tab.locator(vs.input).first(), "withRetry never gives up when a receiver stays down. Cap it at five attempts and add a test.");
