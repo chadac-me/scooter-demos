@@ -1,4 +1,5 @@
 # Offline cluster: bake code-server, AHP bridge, node and repo in.
+{ scooter }:
 { lib, pkgs, ... }:
 
 let
@@ -13,6 +14,13 @@ let
     tar -xzf ${npmTarball "undici-types" "7.24.6" "sha512-WRNW+sJgj5OBN4/0JpHFqtqzhpbnV0GuB+OozA9gCL7a993SmU+1JBZCzLNxYsbMfIeDL+lTsphD5jN5N+n0zg=="} -C $out/undici-types --strip-components=1
   '';
   repo = ../demos/vscode/repo;
+
+  # patchelf corrupts the bundled node; use nixpkgs' same version.
+  codeServer = prev: (prev.callPackage "${scooter}/contrib/code-server/code-server-bin" { }).overrideAttrs (o: {
+    postInstall = (o.postInstall or "") + ''
+      ln -sf ${prev.nodejs_24}/bin/node $out/libexec/code-server/lib/node
+    '';
+  });
 
   # Follow the browser theme; skip first-run prompts.
   settings = pkgs.writeText "code-server-settings.json" (builtins.toJSON {
@@ -31,8 +39,11 @@ let
   });
 in
 {
-  # Real packages behind the stubs, so first start skips building.
-  system.extraDependencies = [ pkgs.code-server.real pkgs.scooter-vscode-ahp.real ];
+  # After the stub overlay, so this code-server replaces its shim.
+  nixpkgs.overlays = lib.mkAfter [ (final: prev: { code-server = codeServer prev; }) ];
+
+  # The real AHP bridge behind its stub, so first start skips building.
+  system.extraDependencies = [ pkgs.scooter-vscode-ahp.real ];
 
   environment.systemPackages = [ pkgs.nodejs ];
 
