@@ -140,7 +140,8 @@ The director (`lib/director.mjs`) also has:
 | `dragOn(canvas, [x1, y1], [x2, y2])` | press at one canvas point and release at another |
 | `submitCard(card, button)` | answer an ask-user card |
 | `scrollToEnd()`, `park()` | show the reply's tail; move the pointer aside |
-| `use(page)` | carry on in another tab, such as one a link opened |
+| `use(page)` | carry on in another tab, such as one a link opened, or return to one |
+| `cut(wait)` | leave a wait out of the video, e.g. `d.cut(() => locator.waitFor())` while a sandbox boots |
 | `hold(ms)`, `settle()` | pause on camera; wait for layout to stop moving |
 
 `d.page` is the Playwright page, for locators and anything else. Targets are
