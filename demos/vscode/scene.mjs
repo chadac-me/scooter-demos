@@ -56,6 +56,7 @@ export default scene(async (d) => {
   await d.click(change);
   await tab.locator(vs.diff).first().waitFor({ state: "visible", timeout: 30_000 });
   await d.settle(1000);
+  d.mark("poster");
   await d.hold(3000);
 
   // The new test, in VS Code's terminal.
