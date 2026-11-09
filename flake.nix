@@ -50,8 +50,12 @@
           test = import "${scooter}/.github/deployment/test-platform.nix" {
             inherit lib;
             scooterSkills = scooter.lib.scooterSkills;
-            # The notebook web service the marimo demo opens.
-            testContribs = { marimo.enable = true; };
+            # The sandbox services cluster demos open: notebook, files viewer, VS Code.
+            testContribs = {
+              marimo.enable = true;
+              files.enable = true;
+              "code-server".enable = true;
+            };
           } registry;
         in {
           imports = [
@@ -64,6 +68,8 @@
           ];
           scooter = {
             testing.fakeAgent = false;
+            # Self-access, so Files remarks and app pins wake the agent.
+            conversationController.selfAccess.enable = true;
             agent.command.program = replayAgent pkgs;
             # One plain model, so the picker shows no provider groups.
             agent.availableModels = lib.mkForce { goose."claude-opus".default = true; };
