@@ -1,0 +1,35 @@
+title: Tidewater shipment tracker
+turns:
+  # Off camera: the scene opens the tracker from this reply's link.
+  - prompt: Open our shipment tracker
+    steps:
+      - shell:
+          # Runs during sandbox boot, so retry until active.
+          command: until systemctl is-active -q webservice-tracker; do scooter-service start tracker >/tmp/start.log 2>&1; sleep 1; done; cat /tmp/start.log
+          capture: { url: 'https://\S+/tracker/' }
+      - say: |
+          The tracker is up: [Shipment tracker](${url})
+
+          Click **Pin a note** and drop a pin on anything you want changed. I'll edit the app and the page reloads.
+
+  # Pin wakes from the tracker service, matched on the note.
+  - match: 'New pin #\d+ on the shipment tracker.*Delayed stand out'
+    steps:
+      - think: Every status badge is the same washed-out grey. I'll give each status its own colour and make Delayed red, with a dot so it scans at a glance.
+      - write: { path: /workspace/tracker/styles.css, from: edits/styles.css, duration: 900 }
+      - shell: { command: tracker resolve 1 }
+      - say: Status badges now have their own colours, and Delayed is red.
+
+  - match: 'New pin #\d+ on the shipment tracker.*reads ETA first'
+    steps:
+      - think: The columns come from the COLUMNS list in app.js, so I'll move ETA up to sit after Shipment.
+      - write: { path: /workspace/tracker/app.js, from: edits/app.js, duration: 700 }
+      - shell: { command: tracker resolve 2 }
+      - say: ETA is now the second column, right after the shipment ID.
+
+  - match: 'New pin #\d+ on the shipment tracker.*our logo'
+    steps:
+      - think: The header shows only the name. I'll add the Tidewater mark, a house over a wave, inline in index.html so it needs no new asset.
+      - write: { path: /workspace/tracker/index.html, from: edits/index.html, duration: 700 }
+      - shell: { command: tracker resolve 3 }
+      - say: The Tidewater logo is in the header now. All three pins are done.

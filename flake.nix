@@ -85,7 +85,11 @@
               inherit lib;
               inherit (c) n2c nixStubs deploymentModules;
               pkgs = c.sandboxPkgs;
-              extraModules = [ ./nix/marimo-offline.nix (import ./nix/vscode-offline.nix { inherit scooter; }) ];
+              extraModules = [
+                ./nix/marimo-offline.nix
+                (import ./nix/vscode-offline.nix { inherit scooter; })
+                ./nix/tracker.nix
+              ];
             }).image;
           };
         };

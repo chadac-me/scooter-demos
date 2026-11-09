@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tidewater Freight · Shipments</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="./">
+    <span class="name">Tidewater Freight</span>
+  </a>
+  <nav>
+    <a class="active" href="./">Shipments</a>
+    <a href="./">Carriers</a>
+    <a href="./">Reports</a>
+  </nav>
+  <span class="user">Dana Whitlock</span>
+</header>
+
+<main>
+  <section class="summary" id="summary"></section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h1>Active shipments</h1>
+      <input type="search" placeholder="Search shipments" aria-label="Search shipments">
+    </div>
+    <table id="shipments">
+      <thead><tr></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+</main>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
