@@ -20,7 +20,12 @@ until curl -sf http://localhost:5800/v2/ >/dev/null; do sleep 2; done
 
 # The Sandbox CRD and controller, the version Scooter's CI installs.
 base=https://github.com/kubernetes-sigs/agent-sandbox/releases/download/v0.5.2
-kubectl apply -f "$base/sandbox.yaml" -f "$base/extensions.yaml"
+# GitHub release downloads sometimes 504; retry.
+for try in 1 2 3 4 5; do
+  kubectl apply -f "$base/sandbox.yaml" -f "$base/extensions.yaml" && break
+  [ "$try" = 5 ] && exit 1
+  sleep 10
+done
 kubectl wait --for=condition=Available deploy --all -n agent-sandbox-system --timeout=180s
 
 "$cluster/bin/push-images"

@@ -73,14 +73,19 @@
             agent.command.program = replayAgent pkgs;
             # One plain model, so the picker shows no provider groups.
             agent.availableModels = lib.mkForce { goose."claude-opus".default = true; };
+            # Above testing.nix's mkForce: code-server outgrows 1Gi.
+            sandboxResources = lib.mkOverride 40 {
+              requests = { cpu = "250m"; memory = "256Mi"; };
+              limits = { cpu = "2"; memory = "3Gi"; };
+            };
             # Gives sandboxes a CONVERSATION_URL, so the notebook page shows the chat.
             ingress.host = "scooter.e2e.test";
-            # Pods here have no internet, so marimo ships in the sandbox image.
+            # Pods have no internet, so demo tools ship in the image.
             images.agent-sandbox-os.package = let c = config.scooter.config; in (import "${scooter}/pkgs/sandbox-os/image.nix" {
               inherit lib;
               inherit (c) n2c nixStubs deploymentModules;
               pkgs = c.sandboxPkgs;
-              extraModules = [ ./nix/marimo-offline.nix ];
+              extraModules = [ ./nix/marimo-offline.nix (import ./nix/vscode-offline.nix { inherit scooter; }) ];
             }).image;
           };
         };
