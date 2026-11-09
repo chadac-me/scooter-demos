@@ -8,7 +8,7 @@ const PINS = [
 ];
 
 export default scene(async (d) => {
-  // Off camera: start the tracker and open it, as if it were already running.
+  // Off camera: start and open the tracker, so it opens running.
   await d.open();
   await d.ask("Open our shipment tracker", { timeout: 600_000 });
   const link = d.page.getByRole("link", { name: "Shipment tracker" }).last();
@@ -31,7 +31,7 @@ export default scene(async (d) => {
     await d.hold(300);
     await tab.keyboard.press("Enter");
     await d.hold(400);
-    // Scooter is woken by the pin, edits the app, and resolves it.
+    // The pin wakes Scooter, which edits the app and resolves it.
     await app.locator(`.tw-pin.resolved[data-pin="${i + 1}"]`).waitFor({ timeout: 120_000 });
     await app.locator("#shipments tbody tr").first().waitFor({ state: "visible" });
     await d.hold(1500);

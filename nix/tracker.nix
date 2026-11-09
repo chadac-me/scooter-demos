@@ -1,6 +1,4 @@
-# Tidewater Freight's shipment tracker: a custom web service the webservice demo
-# opens. Demo-only, not a Scooter feature: the app, the chat beside it, and pins
-# that wake the conversation through self-access.
+# Demo-only tracker service: app, chat and pins that wake Scooter.
 { pkgs, ... }:
 
 let
@@ -18,9 +16,9 @@ in
     enable = true;
     port = 2730;
     displayName = "Shipment tracker";
-    # Every URL the server emits is relative, so it serves at root.
+    # The server emits only relative URLs, so it serves at root.
     stripBasePath = true;
-    # Root, like the agent's shell, so both edit the same files.
+    # Root, so it and the agent's shell share the files.
     user = "root";
     workingDirectory = "/workspace";
     environment = {

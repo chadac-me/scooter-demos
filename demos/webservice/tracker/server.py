@@ -1,10 +1,7 @@
-"""Tidewater's tracker service: the app with live reload, the chat beside it, and pins.
+"""The tracker service: the app with live reload, chat and pins.
 
     server.py                 serve (the webServices.tracker unit)
     server.py resolve <id>    mark a pin resolved (the `tracker` command)
-
-Pins left on the page are POSTed here, stored, and announced to this conversation
-through the router's self-access listener, so a note on the page wakes Scooter.
 """
 
 import json
@@ -42,7 +39,7 @@ def log(msg: str) -> None:
 
 
 class Hub:
-    """Server-sent events to every open page: file changes and pin updates."""
+    """Server-sent events to open pages: file changes and pins."""
 
     def __init__(self) -> None:
         self.lock = threading.Lock()
@@ -73,7 +70,7 @@ class Hub:
 
 
 class Pins:
-    """The page's pins, kept on the workspace so they survive a restart."""
+    """Pins, kept on the workspace to survive a restart."""
 
     def __init__(self, path: Path, hub: Hub) -> None:
         self.path, self.hub = path, hub
@@ -116,7 +113,7 @@ class Pins:
 
 
 def pid1_env(name: str) -> str:
-    """Units inherit no pod env, so read what the pod was given from PID 1."""
+    """Units inherit no pod env, so read it from PID 1."""
     if os.environ.get(name):
         return os.environ[name]
     try:

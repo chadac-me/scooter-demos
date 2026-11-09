@@ -11,7 +11,7 @@ turns:
 
           Click **Pin a note** and drop a pin on anything you want changed. I'll edit the app and the page reloads.
 
-  # The rest are pin wakes from the tracker service, matched on the note.
+  # Pin wakes from the tracker service, matched on the note.
   - match: 'New pin #\d+ on the shipment tracker.*Delayed stand out'
     steps:
       - think: Every status badge is the same washed-out grey. I'll give each status its own colour and make Delayed red, with a dot so it scans at a glance.

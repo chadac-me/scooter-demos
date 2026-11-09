@@ -1,5 +1,4 @@
-// Pin overlay: click any element, leave a note, and it goes to Scooter.
-// Injected into every app page by server.py; also reloads the page on save.
+// Pin overlay and live reload, injected into app pages by server.py.
 (() => {
   "use strict";
   const API = new URL("../api/", location.href);
@@ -74,7 +73,7 @@
   document.body.append(root, hl, toggle, toast);
   const ours = (n) => n && (n.closest?.("#tw-root, #tw-toggle, #tw-toast") || n === hl);
 
-  // A selector that survives the app re-rendering or reordering its markup.
+  // A selector that survives the app re-rendering its markup.
   function selectorFor(node) {
     const parts = [];
     for (let n = node; n && n.nodeType === 1 && n !== document.body; n = n.parentElement) {
@@ -221,7 +220,7 @@
     showToast.t = setTimeout(() => toast.classList.remove("show"), 1800);
   }
 
-  // Live reload: stylesheets swap in place, anything else reloads the page.
+  // CSS swaps in place; any other change reloads the page.
   function onChange(paths) {
     const note = `↻ ${paths.join(", ")} updated`;
     if (paths.every((p) => p.endsWith(".css"))) {

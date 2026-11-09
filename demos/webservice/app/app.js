@@ -1,4 +1,4 @@
-// Renders the shipments table and the summary cards from window.SHIPMENTS.
+// Renders the shipments table and summary cards.
 const COLUMNS = [
   { key: "id", label: "Shipment" },
   { key: "customer", label: "Customer" },
