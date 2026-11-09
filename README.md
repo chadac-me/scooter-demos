@@ -159,7 +159,8 @@ stack can't, such as a published share.
 A demo that needs a real sandbox, such as `marimo`, sets `stack: cluster` and
 plays on a local k3d cluster running Scooter's e2e platform (`.#cluster`). That
 platform runs the replay agent through `scooter.agent.command` and bakes marimo
-into the sandbox image, so the cluster needs no internet once its images are in.
+and the `desktop` demo's module (`demos/desktop/desktop.nix`) into the sandbox
+image, so the cluster needs no internet once its images are in.
 
 ```bash
 lib/cluster-up.sh           # registry, cluster, images, platform: ~10 minutes
@@ -177,6 +178,7 @@ Scripts for cluster demos can also use:
       - shell:
           command: scooter-service start notebook       # runs for real
           capture: { url: 'https://\S+/notebook/' }      # later steps can say ${url}
+      - image: { path: /workspace/plot.png }            # a sandbox image, inline in the reply
 ```
 
 A `write` over a file that is already there is an edit: the second version of a

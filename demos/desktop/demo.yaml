@@ -1,0 +1,4 @@
+title: A desktop in the sandbox
+blurb: Scooter writes a desktop service, runs GPlates on it, and drives the app while you watch beside the chat.
+# The desktop module is baked into the sandbox image (desktop.nix).
+stack: cluster

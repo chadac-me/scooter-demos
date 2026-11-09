@@ -89,6 +89,7 @@
                 ./nix/marimo-offline.nix
                 (import ./nix/vscode-offline.nix { inherit scooter; })
                 ./nix/tracker.nix
+                ./demos/desktop/desktop.nix
               ];
             }).image;
           };
