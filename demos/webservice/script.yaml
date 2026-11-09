@@ -4,7 +4,8 @@ turns:
   - prompt: Open our shipment tracker
     steps:
       - shell:
-          command: scooter-service start tracker
+          # Runs during sandbox boot, so retry until active.
+          command: until systemctl is-active -q webservice-tracker; do scooter-service start tracker >/tmp/start.log 2>&1; sleep 1; done; cat /tmp/start.log
           capture: { url: 'https://\S+/tracker/' }
       - say: |
           The tracker is up: [Shipment tracker](${url})

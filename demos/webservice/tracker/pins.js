@@ -8,7 +8,7 @@
   const css = `
     #tw-root { position: absolute; inset: 0 auto auto 0; z-index: 2147483000; font: 13px/1.4 Inter, system-ui, sans-serif; }
     #tw-root * { box-sizing: border-box; }
-    .tw-pin { position: absolute; display: flex; align-items: center; gap: 8px; transform: translate(-13px, -13px); pointer-events: auto; }
+    .tw-pin { position: absolute; display: flex; align-items: flex-start; gap: 8px; transform: translate(-13px, -13px); pointer-events: auto; }
     .tw-pin.flip { flex-direction: row-reverse; transform: translate(calc(-100% + 13px), -13px); }
     .tw-dot {
       flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
@@ -19,7 +19,7 @@
     .tw-pin.open .tw-dot { animation: tw-pulse 1.6s ease-out infinite; }
     .tw-pin.resolved .tw-dot { background: #16a34a; animation: tw-pop .45s ease-out; }
     .tw-label {
-      max-width: 240px; padding: 6px 10px; border-radius: 8px; white-space: normal;
+      width: max-content; max-width: 240px; padding: 4px 10px; border-radius: 8px; white-space: normal;
       background: #1f2937; color: #f9fafb; box-shadow: 0 6px 18px rgba(0,0,0,.25);
       transition: opacity .35s, transform .35s;
     }

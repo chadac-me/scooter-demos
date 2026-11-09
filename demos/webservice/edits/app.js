@@ -1,7 +1,7 @@
 // Renders the shipments table and the summary cards from window.SHIPMENTS.
 const COLUMNS = [
-  { key: "eta", label: "ETA" },
   { key: "id", label: "Shipment" },
+  { key: "eta", label: "ETA" },
   { key: "customer", label: "Customer" },
   { key: "route", label: "Route" },
   { key: "carrier", label: "Carrier" },
