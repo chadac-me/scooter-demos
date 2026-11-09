@@ -15,7 +15,7 @@ turns:
       - shell:
           command: scooter-service start desktop
           capture: { url: 'https://\S+/desktop/' }
-      - shell: { command: 'cd /workspace && setsid -f gplates /etc/gplates/Rotations/*.rot' }
+      - shell: { command: 'cd /workspace && setsid -f gplates /etc/gplates/Rotations/*.rot >/dev/null 2>&1' }
       - say: |
           The desktop is up: [Desktop](${url})
 
