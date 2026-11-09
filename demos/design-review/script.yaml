@@ -1,4 +1,6 @@
 title: Outbox retry design
+# Brisker than the default, to keep the video near 40 s.
+pace: { say: 360, think: 640 }
 turns:
   - prompt: Design retry handling for the outbox and send it to me
     steps:
@@ -15,7 +17,7 @@ turns:
           keep failing go to a dead-letter table. Two questions are open in the doc. Comment on
           any line and I'll pick it up.
 
-  # The reviewer answers first, so each remark wakes its own turn, in this order.
+  # Answer first, so each remark wakes its own turn.
   - match: 'answered a question in \S+outbox-retry\.md.*Question: attempt-limit'
     steps:
       - think: 10 attempts. That decision goes into the doc in place of the question.
