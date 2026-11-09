@@ -57,8 +57,10 @@ Postgres refuses to run as root, so render as a regular user.
 
 1. `just bump` moves the pinned Scooter to its latest `main`.
 2. Run the **render** workflow (Actions → render → Run workflow). It renders
-   every demo, summarises them on the run page and publishes the gallery to
-   GitHub Pages. Untick *publish* to look at the artifact first.
+   every demo, cluster ones included, summarises them on the run page and
+   publishes the gallery to GitHub Pages. Untick *publish* to look at the
+   artifact first. It runs on Scooter's self-hosted EC2 fleet, which has room
+   for k3d.
 
 Nothing renders on a schedule.
 
@@ -165,6 +167,7 @@ image, so the cluster needs no internet once its images are in.
 ```bash
 lib/cluster-up.sh           # registry, cluster, images, platform: ~10 minutes
 just render marimo
+just render-all             # or every demo, fast and cluster
 k3d cluster delete scooter-demos
 ```
 
@@ -195,7 +198,5 @@ own `k3d` adds the `/dev/kmsg` stand-in k3s needs there.
 
 ## Not yet
 
-- **marimo in CI**: the render workflow doesn't bring up the cluster yet, so
-  `marimo` renders locally only.
 - **`just record`**: writing a script from a real goose run. For now, scripts
   are written by hand.
