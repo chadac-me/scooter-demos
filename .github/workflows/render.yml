@@ -21,27 +21,46 @@ concurrency:
 
 jobs:
   render:
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # Scooter's EC2 fleet: cluster demos need k3d, which outgrows ubuntu-latest.
+    # Safe because only workflow_dispatch, which a fork can't trigger, runs here.
+    runs-on: [self-hosted, linux, x64, nix]
+    # Bounds a wedged cluster holding a fleet runner; the default 360 does not.
+    timeout-minutes: 150
     steps:
-      - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@main
-      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - uses: actions/checkout@v5
+      - uses: nixbuild/nix-quick-install-action@v35
+        with:
+          nix_conf: |
+            max-jobs = auto
+            http-connections = 64
+            max-substitution-jobs = 32
+      # Pull only: self-hosted runners get no secrets.
+      - uses: cachix/cachix-action@v15
+        with:
+          name: scooter
       - name: Install
         run: nix develop -c npm ci --no-audit --no-fund
+      - name: Cluster
+        run: nix shell nixpkgs#k3d nixpkgs#kubectl nixpkgs#curl -c lib/cluster-up.sh
       - name: Render
-        run: nix develop -c node lib/render.mjs
+        run: nix develop -c node lib/render.mjs --all
       - name: Gallery
         run: nix develop -c node lib/site.mjs
       - uses: actions/upload-pages-artifact@v3
         with:
           path: out
       - name: Contact sheet
+        shell: nix shell nixpkgs#jq -c bash -e {0}
         run: |
           {
             echo "## Rendered demos"
             jq -r '.demos | to_entries[] | "- **\(.value.title)**: \(.value.renders | map("\(.theme) \(.duration)s") | join(", "))"' out/manifest.json
           } >> "$GITHUB_STEP_SUMMARY"
+      - name: Tear down k3d
+        if: always()
+        run: |
+          nix shell nixpkgs#k3d -c k3d cluster delete scooter-demos || true
+          nix shell nixpkgs#k3d -c k3d registry delete scooter-reg.localhost || true
 
   deploy:
     if: inputs.publish

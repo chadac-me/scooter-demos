@@ -2,6 +2,10 @@
 render *DEMOS:
     node lib/render.mjs {{DEMOS}}
 
+# Render every demo, cluster ones too; run lib/cluster-up.sh first.
+render-all:
+    node lib/render.mjs --all
+
 # Render one demo fast, headless with Playwright's recorder, to check a scene.
 preview DEMO:
     node lib/render.mjs --preview {{DEMO}}
