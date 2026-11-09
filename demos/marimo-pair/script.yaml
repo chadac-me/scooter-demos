@@ -1,0 +1,121 @@
+title: Pairing in the CI notebook
+# Every cell runs for real; only the prose is scripted.
+turns:
+  # Off camera: open the notebook before the demo begins.
+  - prompt: Open ci_trends.py in a notebook
+    steps:
+      - write: { path: /workspace/ci_trends.py, from: ci_trends.py }
+      - shell:
+          command: scooter-service start notebook
+          capture: { url: 'https://\S+/notebook/' }
+      - say: "It's open: [ci_trends.py](${url}?file=ci_trends.py)"
+
+  - prompt: Why did e2e full get slower last week? Dig in here.
+    steps:
+      - think: The notebook is open, so I'll work in its kernel with marimo-pair rather than touch the file. First the code-mode inspection it asks for.
+      - shell:
+          command: |
+            MARIMO_BASE=${SCOOTER_SERVICES_ORIGIN:+/marimo}; MARIMO_BASE=${MARIMO_BASE:-/c/$CONVERSATION_ID/marimo}
+            bash /etc/scooter/skills/marimo-pair/scripts/execute-code.sh --url "http://localhost:2718$MARIMO_BASE" \
+              -c "import marimo._code_mode as cm; help(cm)"
+      - think: Every run is in `runs`. I'll add a per-day breakdown of e2e full that compares the last 7 days with the 7 before, then chart p50 and p95 by day, so a shift in the typical run and a shift in the tail look different.
+      - shell:
+          command: |
+            MARIMO_BASE=${SCOOTER_SERVICES_ORIGIN:+/marimo}; MARIMO_BASE=${MARIMO_BASE:-/c/$CONVERSATION_ID/marimo}
+            bash /etc/scooter/skills/marimo-pair/scripts/execute-code.sh --url "http://localhost:2718$MARIMO_BASE" - <<'PY'
+            import marimo._code_mode as cm
+
+            breakdown = r'''
+            window = 7
+
+
+            def _pct(xs, q):
+                xs = sorted(xs)
+                return xs[min(len(xs) - 1, int(q * len(xs)))]
+
+
+            _e2e = [r for r in runs if r["workflow"] == "e2e full"]
+            daily = []
+            for _d in range(31 - 2 * window, 31):
+                _m = [r["minutes"] for r in _e2e if r["day"] == _d]
+                daily.append({"day": _d, "runs": len(_m), "p50": _pct(_m, 0.5), "p95": _pct(_m, 0.95)})
+            _recent = [r["minutes"] for r in _e2e if r["day"] > 30 - window]
+            _prior = [r["minutes"] for r in _e2e if 30 - 2 * window < r["day"] <= 30 - window]
+            shift = {_q: (_pct(_prior, _v), _pct(_recent, _v)) for _q, _v in (("p50", 0.5), ("p95", 0.95))}
+            mo.md(
+                f"**e2e full**, last {window} days against the {window} before: "
+                + ", ".join(f"{_q} {_a:.1f} → {_b:.1f} min ({_b / _a - 1:+.0%})" for _q, (_a, _b) in shift.items())
+            )
+            '''
+            chart = r'''
+            _w, _h, _l, _r, _t, _b = 640, 210, 8, 40, 22, 26
+            _top = max(_d["p95"] for _d in daily) * 1.08
+
+
+            def _x(i):
+                return _l + i * (_w - _l - _r) / (len(daily) - 1)
+
+
+            def _y(v):
+                return _h - _b - v / _top * (_h - _t - _b)
+
+
+            def _line(key, color):
+                _pts = " ".join(f"{_x(i):.1f},{_y(d[key]):.1f}" for i, d in enumerate(daily))
+                return (
+                    f'<polyline points="{_pts}" fill="none" stroke="{color}" stroke-width="2.5" stroke-linejoin="round"/>'
+                    f'<text x="{_x(len(daily) - 1) + 6:.1f}" y="{_y(daily[-1][key]) + 4:.1f}" fill="{color}" font-size="12">{key}</text>'
+                )
+
+
+            _split = _x(window - 0.5)
+            _days = "".join(
+                f'<text x="{_x(i):.1f}" y="{_h - 6}" font-size="11" text-anchor="middle" fill="currentColor" opacity=".6">{d["day"]}</text>'
+                for i, d in enumerate(daily)
+                if i % max(1, window // 4) == 0 or i == len(daily) - 1
+            )
+            mo.vstack([
+                mo.md(f"**e2e full** p50 and p95 by day (minutes); the dashed line splits the two {window}-day windows"),
+                mo.Html(
+                    f'<svg viewBox="0 0 {_w} {_h}" width="100%" style="max-width:{_w}px">'
+                    f'<line x1="{_split:.1f}" x2="{_split:.1f}" y1="{_t}" y2="{_h - _b}" stroke="currentColor" stroke-opacity=".35" stroke-dasharray="4 4"/>'
+                    f"{_days}{_line('p50', '#6366f1')}{_line('p95', '#f59e0b')}</svg>"
+                ),
+            ])
+            '''
+            async with cm.get_context() as ctx:
+                b = ctx.create_cell(breakdown.strip(), name="breakdown", hide_code=False)
+                c = ctx.create_cell(chart.strip(), name="p50_p95", after=b)
+                ctx.run_cell(b)
+                ctx.run_cell(c)
+            print(ctx.globals["shift"])
+            PY
+      - say: |
+          It's the tail, not the typical run. Over the last 7 days, e2e full's **p50 is up 5%**
+          (24.8 → 26.1 min), but its **p95 is up 34%** (28.6 → 38.2 min).
+
+          The new chart shows it: p95 jumps on day 24 and stays up while p50 stays flat. Most
+          runs are as fast as before, and a few each day take 10 minutes or more longer. That
+          looks like a suite retrying, not everything getting slower.
+
+          The window is the `window = 7` line at the top of the breakdown cell.
+
+  - prompt: I changed the window. Does it still hold?
+    steps:
+      - think: You edited a cell, so I'll read its code from the kernel rather than the file on disk, along with what it just computed.
+      - shell:
+          command: |
+            MARIMO_BASE=${SCOOTER_SERVICES_ORIGIN:+/marimo}; MARIMO_BASE=${MARIMO_BASE:-/c/$CONVERSATION_ID/marimo}
+            bash /etc/scooter/skills/marimo-pair/scripts/execute-code.sh --url "http://localhost:2718$MARIMO_BASE" - <<'PY'
+            import marimo._code_mode as cm
+
+            async with cm.get_context() as ctx:
+                print(ctx.cells["breakdown"].code.splitlines()[0])
+            print(shift)
+            PY
+      - say: |
+          Yes. You set `window = 14`, and over the last 14 days against the 14 before,
+          **p95 is still up 30%** (28.4 → 36.9 min) while p50 is up 6% (24.1 → 25.6).
+
+          It's a little weaker because the wider window takes in a week from before day 24.
+          The slow tail started that day, and it's still there.

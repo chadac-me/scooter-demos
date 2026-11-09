@@ -1,0 +1,4 @@
+title: Pairing in a marimo notebook
+blurb: Scooter works in your open notebook's kernel, adding cells as you watch, and reads your edits before it answers.
+# Needs a real sandbox pod for the notebook kernel.
+stack: cluster
