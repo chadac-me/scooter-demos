@@ -85,7 +85,10 @@ mode and the dark render in dark mode:
 5. Commit. The videos themselves come from the render workflow.
 
 `script.yaml` is a list of turns, each matched to the user's prompt (case and
-whitespace are ignored):
+whitespace are ignored). A turn can set `match`, a regex, instead of `prompt`,
+for a message the scene doesn't type, such as a Files remark that wakes the agent.
+It matches anywhere in the message, ignoring case, and `.` matches newlines. Exact
+`prompt`s are tried first.
 
 ```yaml
 title: Conversation title
@@ -103,6 +106,9 @@ turns:
           question: Which database?
           options: [{ label: SQLite, description: ... }, { label: Postgres, description: ... }]
           then: { SQLite: [ ...steps ], Postgres: [ ...steps ] }
+  - match: 'commented on \S+/outbox-retry\.md'          # a wake message, not a typed prompt
+    steps:
+      - say: Good catch. I'll cover rolling deploys.
 ```
 
 `scene.mjs` exports a function of the director:
@@ -129,13 +135,19 @@ The director (`lib/director.mjs`) also has:
 | `type(text)`, `send()`, `waitForReply()` | the pieces of `ask` |
 | `moveTo(target)`, `click(target)` | glide the drawn pointer, then click |
 | `drag(target, { dx, dy })` | press, glide and release, e.g. a slider |
+| `typeIn(target, text)` | click a field and type into it, including one inside an iframe |
+| `clickAt(canvas, x, y)` | click a point on a canvas, in the canvas's own pixels |
+| `dragOn(canvas, [x1, y1], [x2, y2])` | press at one canvas point and release at another |
 | `submitCard(card, button)` | answer an ask-user card |
 | `scrollToEnd()`, `park()` | show the reply's tail; move the pointer aside |
 | `use(page)` | carry on in another tab, such as one a link opened |
 | `hold(ms)`, `settle()` | pause on camera; wait for layout to stop moving |
 
 `d.page` is the Playwright page, for locators and anything else. Targets are
-locators or CSS selectors.
+locators or CSS selectors. For a field in an iframe, pass a frame locator's
+locator: `d.typeIn(d.page.frameLocator("iframe").locator("textarea"), "...")`.
+A noVNC canvas's pixels are the remote desktop's, so `clickAt` and `dragOn` take
+desktop coordinates however noVNC scales the view.
 
 In `demo.yaml`, `manifest` adds contrib UI rows the shipped manifest lacks
 (opt-in contribs such as `math`), and `routes` serves files for URLs the fast
@@ -166,9 +178,17 @@ Scripts for cluster demos can also use:
           capture: { url: 'https://\S+/notebook/' }      # later steps can say ${url}
 ```
 
-Inside a Scooter sandbox, run both through `docker-netns`, and run
-`lib/cluster-up.sh` outside the dev shell: the sandbox's own `k3d` adds the
-`/dev/kmsg` stand-in k3s needs there.
+A `write` over a file that is already there is an edit: the second version of a
+doc, say, or a change to an app baked into the image. The tool call reads
+`edit: <path>`, and its result lists the changed lines.
+
+The platform enables the `files` and `code-server` contribs as well as `marimo`,
+and sandbox self-access (`SCOOTER_SELF_URL`), so Files remarks and anything else
+posting to it wake the agent. Match those messages with a turn's `match`.
+
+Inside a Scooter sandbox, run `lib/cluster-up.sh` and `just render` through
+`docker-netns`, and run `lib/cluster-up.sh` outside the dev shell: the sandbox's
+own `k3d` adds the `/dev/kmsg` stand-in k3s needs there.
 
 ## Not yet
 
