@@ -1,0 +1,52 @@
+title: GPlates at 120 Ma
+turns:
+  - prompt: Open GPlates and show me the plate reconstruction at 120 Ma with the coastlines.
+    steps:
+      - think: GPlates is a desktop app, so it needs a display. I'll write a desktop service (Xvfb, openbox, x11vnc and noVNC) that shows the screen beside this chat, start it, and drive GPlates there with xdotool.
+      - write: { path: /etc/scooter/modules/desktop.nix, from: desktop.nix, duration: 1400 }
+      # The image bakes the module in, so the switch is canned.
+      - shell:
+          command: scooter-rebuild switch
+          duration: 2600
+          output: |
+            scooter-apply-module: building toplevel (base config + local modules)...
+            scooter-apply-module: registering generation + switching to /nix/store/9q2v1mxkzv0c5l7a1hrd3y8fw6gq4pbn-nixos-system-sandbox...
+            scooter-apply-module: applied.
+      - shell:
+          command: scooter-service start desktop
+          capture: { url: 'https://\S+/desktop/' }
+      - shell: { command: 'cd /workspace && setsid -f gplates /etc/gplates/Rotations/*.rot >/dev/null 2>&1' }
+      - say: |
+          The desktop is up: [Desktop](${url})
+
+          GPlates is starting there. I'll load the coastlines and take it to 120 Ma while you watch.
+      - pause: 5000
+      # Real: the user watches these land on the desktop.
+      - shell: { command: "xdotool search --sync --name '^Layers$' windowsize 330 150 windowmove 666 742" }
+      - pause: 800
+      - shell: { command: "xdotool search --name '^GPlates \\(' windowactivate --sync && xdotool key ctrl+o && xdotool search --sync --name '^Open Files$' windowactivate --sync" }
+      - shell: { command: xdotool type --delay 45 /etc/gplates/Coastlines/Global_EarthByte_GPlates_PresentDay_Coastlines.gpmlz && xdotool key Return }
+      - pause: 1500
+      - shell: { command: xdotool key alt+r && sleep 1.2 && xdotool key Return && sleep 1 && xdotool type --delay 250 120 && xdotool key Return }
+      - pause: 1200
+      - say: |
+          Done: the coastlines are loaded and the globe shows 120 Ma, coloured by plate. South America and Africa are still joined, and the South Atlantic is only starting to open.
+
+          Drag the globe to look around.
+
+  - prompt: Export that as a PNG for my slides
+    steps:
+      - think: GPlates' own exporter renders the current view, rotation included. File › Export, a single snapshot of the Image type, as PNG into /workspace.
+      - shell: { command: "xdotool key ctrl+shift+e && xdotool search --sync --name '^Export$' windowactivate --sync" }
+      - pause: 600
+      # Clicks are dialog-relative, so placement does not matter.
+      - shell: { command: "E=$(xdotool search --name '^Export$'); xdotool mousemove --window $E 264 20 click 1 sleep 0.5 mousemove --window $E 398 77 click 1 sleep 0.4 mousemove --window $E 78 534 click 1 && xdotool search --sync --name '^Add Data to Export$' windowactivate --sync" }
+      - pause: 600
+      - shell: { command: "A=$(xdotool search --name '^Add Data to Export$'); xdotool mousemove --window $A 85 75 click 1 sleep 0.6 mousemove --window $A 107 574 click 1 sleep 0.6 mousemove --window $A 687 413 click --repeat 3 1 key ctrl+a type --delay 40 globe_%dMa" }
+      - pause: 500
+      - shell: { command: "A=$(xdotool search --name '^Add Data to Export$'); xdotool mousemove --window $A 812 676 click 1" }
+      - pause: 500
+      - shell: { command: "E=$(xdotool search --name '^Export$'); xdotool mousemove --window $E 344 563 click --repeat 3 1 key ctrl+a type --delay 40 /workspace && xdotool key Tab mousemove --window $E 520 634 click 1 sleep 2.5 mousemove --window $E 562 706 click 1" }
+      - shell: { command: ls -l /workspace/globe_120Ma.png }
+      - image: { path: /workspace/globe_120Ma.png }
+      - say: Here it is, from the view you left it at. It's saved as `/workspace/globe_120Ma.png`.
