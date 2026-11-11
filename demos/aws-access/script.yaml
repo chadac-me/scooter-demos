@@ -1,0 +1,60 @@
+title: Prune old CI artifacts
+turns:
+  - prompt: Delete last quarter's CI artifacts from the dev artifacts bucket
+    steps:
+      - think: I have no standing AWS credentials. Deleting objects is a write, so I'll request the narrowest policy that does the job and wait for a human to approve it.
+      - tool:
+          title: aws_request_permissions
+          input:
+            account: dev
+            justification: Delete Q3 CI build artifacts from acme-dev-artifacts
+            actions: [s3:ListBucket, s3:DeleteObject]
+            resources: ["arn:aws:s3:::acme-dev-artifacts", "arn:aws:s3:::acme-dev-artifacts/ci/2026-q3/*"]
+          output: "Request awsreq-7f3c21 is waiting for approval."
+      - approval:
+          contrib: aws
+          id: awsreq-7f3c21
+          kind: aws.permissions
+          message: "Scooter is requesting AWS access to dev (risk: medium)."
+          data:
+            account: dev
+            risk: medium
+            summary: List acme-dev-artifacts and delete objects under ci/2026-q3/.
+            justification: Delete last quarter's CI build artifacts, as asked.
+            write_actions: [s3:DeleteObject]
+            policy_document:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action: [s3:ListBucket]
+                  Resource: ["arn:aws:s3:::acme-dev-artifacts"]
+                  Condition: { StringLike: { "s3:prefix": ["ci/2026-q3/*"] } }
+                - Effect: Allow
+                  Action: [s3:DeleteObject]
+                  Resource: ["arn:aws:s3:::acme-dev-artifacts/ci/2026-q3/*"]
+            obligations:
+              - rules: [writes-need-a-human]
+                parts: [s3:DeleteObject]
+      - say: |
+          I've requested access to **dev**, scoped to `ci/2026-q3/` in `acme-dev-artifacts`. It can list that prefix and delete objects under it, nothing else.
+
+          Approve the card in **Approvals** and I'll carry on.
+
+  - match: 'answered "approve" to aws request awsreq-7f3c21'
+    steps:
+      - shell:
+          command: aws --profile dev s3 ls s3://acme-dev-artifacts/ci/2026-q3/ --recursive --summarize | tail -2
+          output: |
+            Total Objects: 1284
+               Total Size: 38.6 GiB
+      - shell:
+          command: aws --profile dev s3 rm s3://acme-dev-artifacts/ci/2026-q3/ --recursive --only-show-errors && echo done
+          output: "done\n"
+      - say: |
+          Deleted last quarter's CI artifacts: **1,284 objects, 38.6 GiB**, all under `ci/2026-q3/`.
+
+          The grant covered only that prefix, and its credentials expire on their own.
+
+  - match: 'answered "deny" to aws request awsreq-7f3c21'
+    steps:
+      - say: Understood. I haven't touched the bucket.
