@@ -20,7 +20,7 @@ export default scene(async (d) => {
   await link.click();
   const tab = (await popup) ?? d.page;
   await d.use(tab);
-  const nb = tab.frameLocator("#marimo");
+  const nb = tab.frameLocator("#app-frame");
   const chat = tab.frameLocator('iframe[title="Scooter chat"]');
   await nb.locator("svg rect").first().waitFor({ state: "visible", timeout: 300_000 });
   await chat.locator(sel.composer).first().waitFor({ state: "visible", timeout: 60_000 });
