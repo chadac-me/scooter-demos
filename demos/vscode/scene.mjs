@@ -3,8 +3,7 @@ import { scene } from "../../lib/director.mjs";
 // VS Code's workbench, from code-server 4.141.
 const vs = {
   workbench: ".monaco-workbench",
-  harness: '[aria-label="Local"]',
-  scooter: ".action-widget .title",
+  chat: '[aria-label="Toggle Chat"]',
   input: ".interactive-input-editor",
   reply: ".interactive-list",
   scm: '.activitybar [aria-label^="Source Control"]',
@@ -40,10 +39,8 @@ export default scene(async (d) => {
   });
   await d.hold(800);
 
-  // The Scooter harness: this conversation, continued from VS Code.
-  await d.click(tab.locator(vs.harness).first());
-  await d.hold(500);
-  await d.click(tab.locator(vs.scooter, { hasText: /^Scooter$/ }).first());
+  // VS Code's chat opens on the Scooter agent.
+  await d.click(tab.locator(vs.chat).first());
   await d.cut(() => tab.locator(vs.input).getByText("Chat with Scooter").waitFor({ state: "visible", timeout: 60_000 }));
   await d.hold(1200);
 
