@@ -223,11 +223,11 @@
         "uv-nix": "uv-nix"
       },
       "locked": {
-        "lastModified": 1794180305,
-        "narHash": "sha256-sR+BbZXuksQMM9sChPG8wiGy0T/FL7P9IzQ8IqLVvFU=",
+        "lastModified": 1794356529,
+        "narHash": "sha256-Y8ZhEFahxEz/yIY2ld8IPOuPusZV0A/AOW5g2ouYAc4=",
         "owner": "chadac-me",
         "repo": "scooter",
-        "rev": "5c2328d0d70242bc697830f2f0a86d585d228885",
+        "rev": "84367091797891b6e3a1656569f65b8df19d01df",
         "type": "github"
       },
       "original": {
@@ -281,11 +281,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794113671,
-        "narHash": "sha256-c0ApAYrmLojrKInFfKzfk5OZIhLaE6CHDaeASPkrsLQ=",
+        "lastModified": 1794200939,
+        "narHash": "sha256-Vqoz6MCKC53UJGBa58ADeNotu7Ic5vw5CABrjhlVnHg=",
         "owner": "chadac",
         "repo": "uv-nix",
-        "rev": "4b44fd56757945366980653f438eef9f79d02e3d",
+        "rev": "6166b961dc054d3e630758d2fa9821c1f53c8fcf",
         "type": "github"
       },
       "original": {

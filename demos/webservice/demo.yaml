@@ -1,4 +1,0 @@
-title: Custom web services
-blurb: Pin notes on your company's own app, served from the sandbox, and Scooter edits it live beside the chat.
-# The tracker is baked into the sandbox image (nix/tracker.nix).
-stack: cluster

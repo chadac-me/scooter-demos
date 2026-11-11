@@ -1,0 +1,4 @@
+title: Web app review
+blurb: Pin notes on your company's own app in Review, and Scooter edits it live beside the chat.
+# The tracker is Review's target in the sandbox image (nix/review-app.nix).
+stack: cluster
