@@ -1,0 +1,3 @@
+title: Scooter asks before it touches AWS
+blurb: Scooter has no standing AWS credentials. It requests a scoped policy, you approve it on a card that marks every write, and only then does it act.
+stack: fast

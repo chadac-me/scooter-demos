@@ -108,10 +108,20 @@ turns:
           question: Which database?
           options: [{ label: SQLite, description: ... }, { label: Postgres, description: ... }]
           then: { SQLite: [ ...steps ], Postgres: [ ...steps ] }
+      - approval:                                        # a contrib's approval card, e.g. AWS
+          contrib: aws
+          id: awsreq-1
+          kind: aws.permissions                          # the card's renderer; data is its request
+          data: { account: dev, risk: medium, ... }
   - match: 'commented on \S+/outbox-retry\.md'          # a wake message, not a typed prompt
     steps:
       - say: Good catch. I'll cover rolling deploys.
 ```
+
+An `approval` card is raised the way the contrib's broker half raises it. On the
+fast stack, a fake broker (`lib/fake-broker.mjs`) takes the answer and wakes the
+agent with `The user answered "approve" to aws request awsreq-1.`, so a later
+turn `match`es that message to carry on.
 
 `scene.mjs` exports a function of the director:
 
