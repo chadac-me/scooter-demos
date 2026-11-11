@@ -50,11 +50,12 @@
           test = import "${scooter}/.github/deployment/test-platform.nix" {
             inherit lib;
             scooterSkills = scooter.lib.scooterSkills;
-            # The sandbox services cluster demos open: notebook, files viewer, VS Code.
+            # The sandbox services cluster demos open: notebook, files viewer, VS Code, Review.
             testContribs = {
               marimo.enable = true;
               files.enable = true;
               "code-server".enable = true;
+              "web-review".enable = true;
             };
           } registry;
         in {
@@ -68,7 +69,7 @@
           ];
           scooter = {
             testing.fakeAgent = false;
-            # Self-access, so Files remarks and app pins wake the agent.
+            # Self-access, so Files remarks and Review notes wake the agent.
             conversationController.selfAccess.enable = true;
             agent.command.program = replayAgent pkgs;
             # One plain model, so the picker shows no provider groups.
@@ -88,7 +89,7 @@
               extraModules = [
                 ./nix/marimo-offline.nix
                 (import ./nix/vscode-offline.nix { inherit scooter; })
-                ./nix/tracker.nix
+                ./nix/review-app.nix
                 ./demos/desktop/desktop.nix
               ];
             }).image;

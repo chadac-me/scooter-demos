@@ -90,7 +90,8 @@ mode and the dark render in dark mode:
 whitespace are ignored). A turn can set `match`, a regex, instead of `prompt`,
 for a message the scene doesn't type, such as a Files remark that wakes the agent.
 It matches anywhere in the message, ignoring case, and `.` matches newlines. Exact
-`prompt`s are tried first.
+`prompt`s are tried first. A `match`'s named groups fill `${name}` in the turn's
+steps, such as `(?<id>[0-9a-f-]+)` for the id `review resolve ${id}` needs.
 
 ```yaml
 title: Conversation title
@@ -198,8 +199,8 @@ A `write` over a file that is already there is an edit: the second version of a
 doc, say, or a change to an app baked into the image. The tool call reads
 `edit: <path>`, and its result lists the changed lines.
 
-The platform enables the `files` and `code-server` contribs as well as `marimo`,
-and sandbox self-access (`SCOOTER_SELF_URL`), so Files remarks and anything else
+The platform enables the `files`, `code-server` and `web-review` contribs as well as `marimo`,
+and sandbox self-access (`SCOOTER_SELF_URL`), so Files remarks, Review notes and anything else
 posting to it wake the agent. Match those messages with a turn's `match`.
 
 Inside a Scooter sandbox, run `lib/cluster-up.sh` and `just render` through
