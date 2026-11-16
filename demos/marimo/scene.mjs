@@ -16,8 +16,8 @@ export default scene(async (d) => {
   await d.click(link);
   const tab = (await popup) ?? d.page;
   await d.use(tab);
-  const nb = tab.frameLocator("#app-frame");
-  await nb.locator("svg rect").first().waitFor({ state: "visible", timeout: 300_000 });
+  const nb = tab.locator(".marimo-cell");
+  await nb.locator(`rect[fill="#6366f1"]`).first().waitFor({ state: "visible", timeout: 300_000 });
   await d.settle(800);
   d.mark("poster");
   await d.hold(1200);

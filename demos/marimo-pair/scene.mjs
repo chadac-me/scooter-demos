@@ -1,13 +1,16 @@
-import { scene, sel } from "../../lib/director.mjs";
+import { scene } from "../../lib/director.mjs";
 
-/** Send a prompt from the side chat; return its run status. */
-async function askInChat(d, chat, text) {
-  await d.typeIn(chat.locator(sel.composer).first(), text);
+// The prompt box of marimo's Agent panel, which Scooter opens on this conversation.
+const composer = ".mo-agent-panel .cm-content";
+
+/** Send a prompt from the Agent panel; return its working indicator. */
+async function askInPanel(d, text) {
+  await d.typeIn(d.page.locator(composer).last(), text);
   await d.hold(350);
   await d.page.keyboard.press("Enter");
-  const status = chat.locator(sel.runStatus).first();
-  await status.waitFor({ state: "visible", timeout: 30_000 }).catch(() => {});
-  return status;
+  const working = d.page.getByText("Agent is working").first();
+  await working.waitFor({ state: "visible", timeout: 30_000 }).catch(() => {});
+  return working;
 }
 
 export default scene(async (d) => {
@@ -20,22 +23,22 @@ export default scene(async (d) => {
   await link.click();
   const tab = (await popup) ?? d.page;
   await d.use(tab);
-  const nb = tab.frameLocator("#app-frame");
-  const chat = tab.frameLocator('iframe[title="Scooter chat"]');
-  await nb.locator("svg rect").first().waitFor({ state: "visible", timeout: 300_000 });
-  await chat.locator(sel.composer).first().waitFor({ state: "visible", timeout: 60_000 });
+  // Notebook cells only: the panel shows the same code in its tool calls.
+  const cells = tab.locator(".marimo-cell");
+  await cells.locator(`rect[fill="#6366f1"]`).first().waitFor({ state: "visible", timeout: 300_000 });
+  await tab.locator(composer).last().waitFor({ state: "visible", timeout: 60_000 });
   await d.settle(1500);
 
   d.mark("begin");
   await d.hold(800);
-  const run = await askInChat(d, chat, "Why did e2e full get slower last week? Dig in here.");
+  const run = await askInPanel(d, "Why did e2e full get slower last week? Dig in here.");
   await d.park();
 
   // New cells land at the notebook's end; follow them.
-  const summary = nb.getByText(/last 7 days against the 7 before/).first();
+  const summary = cells.getByText(/last 7 days against the 7 before/).first();
   await summary.waitFor({ state: "visible", timeout: 300_000 });
   await d.focus(summary);
-  const chart = nb.getByText(/p50 and p95 by day/).first();
+  const chart = cells.getByText(/p50 and p95 by day/).first();
   await chart.waitFor({ state: "visible", timeout: 120_000 });
   await d.focus(chart);
   await run.waitFor({ state: "detached", timeout: 300_000 });
@@ -44,7 +47,7 @@ export default scene(async (d) => {
   await d.hold(2500);
 
   // The user widens the window in Scooter's cell.
-  const line = nb.locator(".cm-line", { hasText: /^window = 7$/ }).first();
+  const line = cells.locator(".cm-line", { hasText: /^window = 7$/ }).first();
   await d.focus(line);
   await d.click(line);
   await tab.keyboard.press("End");
@@ -57,13 +60,15 @@ export default scene(async (d) => {
   }
   await d.hold(500);
   await tab.keyboard.press("Control+Enter");
-  await nb.getByText(/last 14 days against the 14 before/).first().waitFor({ state: "visible", timeout: 60_000 });
-  await d.focus(nb.getByText(/p50 and p95 by day/).first());
+  await cells.getByText(/last 14 days against the 14 before/).first().waitFor({ state: "visible", timeout: 60_000 });
+  await d.focus(cells.getByText(/p50 and p95 by day/).first());
   await d.hold(1800);
 
-  const again = await askInChat(d, chat, "I changed the window. Does it still hold?");
+  const again = await askInPanel(d, "I changed the window. Does it still hold?");
   await d.park();
   await again.waitFor({ state: "detached", timeout: 300_000 });
+  // The panel doesn't scroll its last reply into view.
+  await d.focus(tab.locator(".mo-agent-panel").getByText(/The slow tail started that day/).last());
   await d.settle(800);
   await d.hold(3500);
   d.mark("end");

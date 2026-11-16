@@ -10,18 +10,19 @@ turns:
           capture: { url: 'https://\S+/notebook/' }
       - say: "It's open: [ci_trends.py](${url}?file=ci_trends.py)"
 
-  - prompt: Why did e2e full get slower last week? Dig in here.
+  # Sent from marimo's Agent panel, which appends the notebook it has open.
+  - match: '^Why did e2e full get slower last week\? Dig in here\.'
     steps:
       - think: The notebook is open, so I'll work in its kernel with marimo-pair rather than touch the file. First the code-mode inspection it asks for.
       - shell:
           command: |
-            MARIMO_BASE=${SCOOTER_SERVICES_ORIGIN:+/marimo}; MARIMO_BASE=${MARIMO_BASE:-/c/$CONVERSATION_ID/marimo}
+            MARIMO_BASE=${SCOOTER_SERVICES_ORIGIN:+/notebook}; MARIMO_BASE=${MARIMO_BASE:-/c/$CONVERSATION_ID/notebook}
             bash /etc/scooter/skills/marimo-pair/scripts/execute-code.sh --url "http://localhost:2718$MARIMO_BASE" \
               -c "import marimo._code_mode as cm; help(cm)"
       - think: Every run is in `runs`. I'll add a per-day breakdown of e2e full that compares the last 7 days with the 7 before, then chart p50 and p95 by day, so a shift in the typical run and a shift in the tail look different.
       - shell:
           command: |
-            MARIMO_BASE=${SCOOTER_SERVICES_ORIGIN:+/marimo}; MARIMO_BASE=${MARIMO_BASE:-/c/$CONVERSATION_ID/marimo}
+            MARIMO_BASE=${SCOOTER_SERVICES_ORIGIN:+/notebook}; MARIMO_BASE=${MARIMO_BASE:-/c/$CONVERSATION_ID/notebook}
             bash /etc/scooter/skills/marimo-pair/scripts/execute-code.sh --url "http://localhost:2718$MARIMO_BASE" - <<'PY'
             import marimo._code_mode as cm
 
@@ -100,12 +101,12 @@ turns:
 
           The window is the `window = 7` line at the top of the breakdown cell.
 
-  - prompt: I changed the window. Does it still hold?
+  - match: '^I changed the window\. Does it still hold\?'
     steps:
       - think: You edited a cell, so I'll read its code from the kernel rather than the file on disk, along with what it just computed.
       - shell:
           command: |
-            MARIMO_BASE=${SCOOTER_SERVICES_ORIGIN:+/marimo}; MARIMO_BASE=${MARIMO_BASE:-/c/$CONVERSATION_ID/marimo}
+            MARIMO_BASE=${SCOOTER_SERVICES_ORIGIN:+/notebook}; MARIMO_BASE=${MARIMO_BASE:-/c/$CONVERSATION_ID/notebook}
             bash /etc/scooter/skills/marimo-pair/scripts/execute-code.sh --url "http://localhost:2718$MARIMO_BASE" - <<'PY'
             import marimo._code_mode as cm
 

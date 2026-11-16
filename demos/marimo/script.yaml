@@ -10,5 +10,5 @@ turns:
       - say: |
           Your notebook is running: [ci_trends.py](${url}?file=ci_trends.py)
 
-          Pick a workflow or drag the slider and the chart recomputes. The chat sits beside it,
-          so you can keep asking for changes while you look.
+          Pick a workflow or drag the slider and the chart recomputes. This chat is in its
+          sidebar too, so you can keep asking for changes while you look.
