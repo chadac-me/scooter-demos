@@ -62,11 +62,14 @@ jobs:
             max-jobs = auto
             http-connections = 64
             max-substitution-jobs = 32
+            stalled-download-timeout = 60
       # Pull only: self-hosted runners get no secrets.
       - uses: cachix/cachix-action@v15
         with:
           name: scooter
       - name: Install
+        # A stalled cache fetch once hung here for 50 minutes.
+        timeout-minutes: 20
         run: nix develop -c npm ci --no-audit --no-fund
       - name: Cluster
         if: matrix.demo.cluster
