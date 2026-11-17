@@ -1,10 +1,14 @@
-# Render every demo against the pinned Scooter and publish the gallery to Pages.
+# Render each demo in its own job, then publish to Pages.
 # Manual only: run it after `just bump`, or whenever the docs need fresh videos.
 name: render
 
 on:
   workflow_dispatch:
     inputs:
+      demos:
+        description: Demos to render, space-separated (blank renders all; the rest keep their live videos)
+        type: string
+        default: ""
       publish:
         description: Publish to GitHub Pages (otherwise only upload the artifact)
         type: boolean
@@ -20,12 +24,36 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  list:
+    runs-on: ubuntu-latest
+    outputs:
+      demos: ${{ steps.list.outputs.demos }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: list
+        env:
+          DEMOS: ${{ inputs.demos }}
+        run: |
+          set -euo pipefail
+          names=${DEMOS:-$(ls demos)}
+          for n in $names; do
+            [ -f "demos/$n/demo.yaml" ] || { echo "::error::no demo named $n"; exit 1; }
+            grep -q '^stack: cluster' "demos/$n/demo.yaml" && cluster=true || cluster=false
+            jq -nc --arg name "$n" --argjson cluster "$cluster" '{name: $name, cluster: $cluster}'
+          done | jq -sc . | sed 's/^/demos=/' >> "$GITHUB_OUTPUT"
+
   render:
+    needs: list
+    name: render ${{ matrix.demo.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        demo: ${{ fromJSON(needs.list.outputs.demos) }}
     # Scooter's EC2 fleet: cluster demos need k3d, which outgrows ubuntu-latest.
     # Safe because only workflow_dispatch, which a fork can't trigger, runs here.
     runs-on: [self-hosted, linux, x64, nix]
     # Bounds a wedged cluster holding a fleet runner; the default 360 does not.
-    timeout-minutes: 150
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v5
       - uses: nixbuild/nix-quick-install-action@v35
@@ -41,30 +69,56 @@ jobs:
       - name: Install
         run: nix develop -c npm ci --no-audit --no-fund
       - name: Cluster
+        if: matrix.demo.cluster
         run: nix shell nixpkgs#k3d nixpkgs#kubectl nixpkgs#curl -c lib/cluster-up.sh
       - name: Render
-        run: nix develop -c node lib/render.mjs --all
+        env:
+          DEMO: ${{ matrix.demo.name }}
+        run: nix develop -c node lib/render.mjs "$DEMO"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: demo-${{ matrix.demo.name }}
+          path: |
+            out/manifest.json
+            out/*.mp4
+            out/*.png
+          # A re-run replaces the earlier attempt's render.
+          overwrite: true
+          retention-days: 7
+      - name: Tear down k3d
+        if: always() && matrix.demo.cluster
+        run: |
+          nix shell nixpkgs#k3d -c k3d cluster delete scooter-demos || true
+          nix shell nixpkgs#k3d -c k3d registry delete scooter-reg.localhost || true
+
+  publish:
+    needs: [list, render]
+    # Publish whatever rendered; failed demos keep their live videos.
+    if: always() && needs.list.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: demo-*
+          path: parts
+      - name: Assemble
+        run: node lib/assemble.mjs parts
       - name: Gallery
-        run: nix develop -c node lib/site.mjs
+        run: node lib/site.mjs
       - uses: actions/upload-pages-artifact@v3
         with:
           path: out
       - name: Contact sheet
-        shell: nix shell nixpkgs#jq -c bash -e {0}
         run: |
           {
             echo "## Rendered demos"
             jq -r '.demos | to_entries[] | "- **\(.value.title)**: \(.value.renders | map("\(.theme) \(.duration)s") | join(", "))"' out/manifest.json
           } >> "$GITHUB_STEP_SUMMARY"
-      - name: Tear down k3d
-        if: always()
-        run: |
-          nix shell nixpkgs#k3d -c k3d cluster delete scooter-demos || true
-          nix shell nixpkgs#k3d -c k3d registry delete scooter-reg.localhost || true
 
   deploy:
-    if: inputs.publish
-    needs: render
+    needs: publish
+    if: always() && inputs.publish && needs.publish.result == 'success'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -72,3 +126,14 @@ jobs:
     steps:
       - id: deploy
         uses: actions/deploy-pages@v4
+
+  # Turns the run red when any demo failed.
+  check:
+    needs: render
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - if: needs.render.result != 'success'
+        run: |
+          echo "::error::Some demos failed to render and kept their live videos. Fix them, or re-run the failed jobs."
+          exit 1

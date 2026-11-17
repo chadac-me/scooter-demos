@@ -47,29 +47,27 @@ in
 
   environment.systemPackages = [ pkgs.nodejs ];
 
-  # code-server runs as root, so settings live under /root.
-  systemd.tmpfiles.rules = [
-    "d /root/.local/share/code-server/User 0755 root root -"
-    "C /root/.local/share/code-server/User/settings.json 0644 root root - ${settings}"
-  ];
-
-  # Seed an empty /workspace with the demo repo.
+  # Seed an empty /workspace with the repo and settings.
   systemd.services.courier-checkout = {
     description = "check out the vscode demo's repo at /workspace";
     wantedBy = [ "multi-user.target" ];
     after = [ "workspace.mount" "local-fs.target" ];
+    # Before code-server writes its own settings there.
+    before = [ "webservice-vscode.service" ];
     path = [ pkgs.git pkgs.coreutils ];
     serviceConfig = { Type = "oneshot"; RemainAfterExit = true; };
     script = ''
       [ -e /workspace/.git ] && exit 0
-      mkdir -p /workspace
+      # code-server runs as the agent, with HOME=/workspace.
+      mkdir -p /workspace/.local/share/code-server/User
+      cp --no-preserve=mode ${settings} /workspace/.local/share/code-server/User/settings.json
       cp -r --no-preserve=mode ${repo}/. /workspace/
       mkdir -p /workspace/node_modules
       cp -r --no-preserve=mode ${nodeModules}/. /workspace/node_modules/
       cd /workspace
       git init -q -b main
       # Platform state under .scooter/ changes as we commit.
-      echo .scooter/ >> .git/info/exclude
+      printf '%s\n' .scooter/ .local/ >> .git/info/exclude
       git add -- $(ls -A ${repo})
       git -c user.name=Courier -c user.email=dev@courier.test commit -qm "Deliver order webhooks"
     '';

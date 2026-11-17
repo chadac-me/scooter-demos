@@ -18,7 +18,7 @@ UI is always the pinned version.
 A **scene** drives the browser the way a person would on camera: paced typing,
 a gliding pointer, holds. Chromium runs headed on Xvfb and ffmpeg grabs the
 display at 60 fps. The grab is then trimmed to the scene's `begin`/`end` marks and
-encoded to MP4 (H.264), WebM (VP9) and a poster PNG, in light and dark.
+encoded to MP4 (H.264) and a poster PNG, in light and dark.
 
 ```
 demos/<name>/
@@ -57,10 +57,12 @@ Postgres refuses to run as root, so render as a regular user.
 
 1. `just bump` moves the pinned Scooter to its latest `main`.
 2. Run the **render** workflow (Actions → render → Run workflow). It renders
-   every demo, cluster ones included, summarises them on the run page and
-   publishes the gallery to GitHub Pages. Untick *publish* to look at the
-   artifact first. It runs on Scooter's self-hosted EC2 fleet, which has room
-   for k3d.
+   each demo in its own job on Scooter's self-hosted EC2 fleet, which has room
+   for k3d, then publishes the gallery to GitHub Pages. Name demos in *demos*
+   to render only those. Untick *publish* to look at the artifact first.
+3. If a demo fails, the others still publish and that demo keeps its current
+   video. Fix it, or press **Re-run failed jobs** if it was a flake: the
+   publish job runs again with the new render.
 
 Nothing renders on a schedule.
 
