@@ -79,7 +79,7 @@
               requests = { cpu = "250m"; memory = "256Mi"; };
               limits = { cpu = "2"; memory = "3Gi"; };
             };
-            # Gives sandboxes a CONVERSATION_URL, so the notebook page shows the chat.
+            # A public host, so sandboxes know their conversation's URLs.
             ingress.host = "scooter.e2e.test";
             # Pods have no internet, so demo tools ship in the image.
             images.agent-sandbox-os.package = let c = config.scooter.config; in (import "${scooter}/pkgs/sandbox-os/image.nix" {
@@ -87,7 +87,7 @@
               inherit (c) n2c nixStubs deploymentModules;
               pkgs = c.sandboxPkgs;
               extraModules = [
-                ./nix/marimo-offline.nix
+                (import ./nix/marimo-offline.nix { inherit scooter; })
                 (import ./nix/vscode-offline.nix { inherit scooter; })
                 ./nix/review-app.nix
                 ./demos/desktop/desktop.nix

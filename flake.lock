@@ -223,11 +223,11 @@
         "uv-nix": "uv-nix"
       },
       "locked": {
-        "lastModified": 1794356529,
-        "narHash": "sha256-Y8ZhEFahxEz/yIY2ld8IPOuPusZV0A/AOW5g2ouYAc4=",
+        "lastModified": 1794856519,
+        "narHash": "sha256-SNYi0qwq5OP2ECgrzwB4Dvod+LRWt2dnkZKnmqZmuto=",
         "owner": "chadac-me",
         "repo": "scooter",
-        "rev": "84367091797891b6e3a1656569f65b8df19d01df",
+        "rev": "6b10e4f1a28546989a712e7ca30901a64997a6a5",
         "type": "github"
       },
       "original": {
